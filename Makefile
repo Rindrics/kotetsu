@@ -1,7 +1,8 @@
 BIB_FILE = references.bib
 DOCKER_RUN = docker run --rm -v $(PWD):/work -w /work
+BIBER_IMAGE = ghcr.io/rindrics/kotetsu/biber:latest
 
-.PHONY: format format-check lint check ci clean import
+.PHONY: format format-check lint check ci clean import build-biber
 
 import:
 	@for f in *.bibtex; do \
@@ -22,8 +23,8 @@ format-check:
 	@rm -f $(BIB_FILE).tmp
 	@echo "OK: File is properly formatted"
 
-lint:
-	@$(DOCKER_RUN) texlive/texlive:latest biber --tool --validate-datamodel $(BIB_FILE) 2>&1 | tee $(BIB_FILE).lint.log
+lint: build-biber
+	@$(DOCKER_RUN) $(BIBER_IMAGE) --tool --validate-datamodel $(BIB_FILE) 2>&1 | tee $(BIB_FILE).lint.log
 	@! grep -q 'WARN\|ERROR' $(BIB_FILE).lint.log || (echo "ERROR: Validation issues found"; rm -f $(BIB_FILE).lint.log; exit 1)
 	@rm -f $(BIB_FILE).lint.log references_bibertool.bib
 	@echo "OK: Validation passed"
