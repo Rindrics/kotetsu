@@ -6,20 +6,14 @@ on:
       - main
   pull_request:
 
-env:
-  REGISTRY: ghcr.io
-
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set image name (lowercase)
-        run: echo "BIBER_IMAGE=${{ env.REGISTRY }}/$(echo '${{ github.repository }}/biber' | tr '[:upper:]' '[:lower:]'):latest" >> $GITHUB_ENV
-
       - name: Pull biber image
-        run: docker pull ${{ env.BIBER_IMAGE }}
+        run: docker pull ${{ vars.BIBER_IMAGE }}:latest
 
       - name: Run format check and lint
-        run: make ci BIBER_IMAGE=${{ env.BIBER_IMAGE }}
+        run: make ci BIBER_IMAGE=${{ vars.BIBER_IMAGE }}:latest
