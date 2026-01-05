@@ -25,7 +25,7 @@ format-check:
 
 lint: build-biber
 	@$(DOCKER_RUN) $(BIBER_IMAGE) --tool --validate-datamodel $(BIB_FILE) 2>&1 | tee $(BIB_FILE).lint.log
-	@! grep -q 'WARN\|ERROR' $(BIB_FILE).lint.log || (echo "ERROR: Validation issues found"; rm -f $(BIB_FILE).lint.log; exit 1)
+	@! grep -q '^WARN - \|^ERROR - ' $(BIB_FILE).lint.log || (echo "ERROR: Validation issues found"; rm -f $(BIB_FILE).lint.log; exit 1)
 	@rm -f $(BIB_FILE).lint.log references_bibertool.bib
 	@echo "OK: Validation passed"
 
