@@ -14,11 +14,11 @@ import:
 	done
 
 format:
-	cat $(BIB_FILE) | $(DOCKER_RUN) -i node:20-alpine npx bibtex-tidy --curly --numeric --sort-fields --no-align --sort > $(BIB_FILE).tmp
+	cat $(BIB_FILE) | $(DOCKER_RUN) -i node:20-alpine npx bibtex-tidy --curly --numeric --sort-fields --no-align --sort --trailing-commas > $(BIB_FILE).tmp
 	mv $(BIB_FILE).tmp $(BIB_FILE)
 
 format-check:
-	@cat $(BIB_FILE) | $(DOCKER_RUN) -i node:20-alpine npx bibtex-tidy --curly --numeric --sort-fields --no-align --sort > $(BIB_FILE).tmp
+	@cat $(BIB_FILE) | $(DOCKER_RUN) -i node:20-alpine npx bibtex-tidy --curly --numeric --sort-fields --no-align --sort --trailing-commas > $(BIB_FILE).tmp
 	@diff -q $(BIB_FILE) $(BIB_FILE).tmp > /dev/null || (echo "ERROR: File needs formatting. Run 'make format'"; rm -f $(BIB_FILE).tmp; exit 1)
 	@rm -f $(BIB_FILE).tmp
 	@echo "OK: File is properly formatted"
