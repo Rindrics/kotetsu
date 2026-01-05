@@ -1,0 +1,36 @@
+BIB_FILE = references.bib
+DOCKER_RUN = docker run --rm -v $(PWD):/work -w /work
+
+.PHONY: format format-check lint check ci clean import
+
+import:
+	@for f in *.bibtex; do \
+		if [ -f "$$f" ]; then \
+			cat "$$f" >> $(BIB_FILE); \
+			rm "$$f"; \
+			echo "Imported: $$f"; \
+		fi; \
+	done
+
+format:
+	cat $(BIB_FILE) | $(DOCKER_RUN) -i node:20-alpine npx bibtex-tidy --curly --numeric --sort-fields --no-align --sort > $(BIB_FILE).tmp
+	mv $(BIB_FILE).tmp $(BIB_FILE)
+
+format-check:
+	@cat $(BIB_FILE) | $(DOCKER_RUN) -i node:20-alpine npx bibtex-tidy --curly --numeric --sort-fields --no-align --sort > $(BIB_FILE).tmp
+	@diff -q $(BIB_FILE) $(BIB_FILE).tmp > /dev/null || (echo "ERROR: File needs formatting. Run 'make format'"; rm -f $(BIB_FILE).tmp; exit 1)
+	@rm -f $(BIB_FILE).tmp
+	@echo "OK: File is properly formatted"
+
+lint:
+	@$(DOCKER_RUN) texlive/texlive:latest biber --tool --validate-datamodel $(BIB_FILE) 2>&1 | tee $(BIB_FILE).lint.log
+	@! grep -q 'WARN\|ERROR' $(BIB_FILE).lint.log || (echo "ERROR: Validation issues found"; rm -f $(BIB_FILE).lint.log; exit 1)
+	@rm -f $(BIB_FILE).lint.log references_bibertool.bib
+	@echo "OK: Validation passed"
+
+check: format lint
+
+ci: format-check lint
+
+clean:
+	rm -f $(BIB_FILE).blg $(BIB_FILE).tmp $(BIB_FILE).lint.log references_bibertool.bib
