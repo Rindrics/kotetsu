@@ -11,6 +11,8 @@
 
 		const query = searchQuery.toLowerCase();
 		return data.items.filter((item) => {
+			// Search in entry ID (for romanized author names)
+			if (item.id.toLowerCase().includes(query)) return true;
 			// Search in title
 			if (item.title.toLowerCase().includes(query)) return true;
 			// Search in author
