@@ -6,11 +6,11 @@ import { mergeBibliography } from '$lib/merge';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-	// Read files from project root (one level up from web/)
-	const projectRoot = join(process.cwd(), '..');
+	// Read files from contents directory (one level up from web/)
+	const contentsDir = join(process.cwd(), '..', 'contents');
 
-	const bibContent = readFileSync(join(projectRoot, 'references.bib'), 'utf-8');
-	const yamlContent = readFileSync(join(projectRoot, 'custom_info.yaml'), 'utf-8');
+	const bibContent = readFileSync(join(contentsDir, 'references.bib'), 'utf-8');
+	const yamlContent = readFileSync(join(contentsDir, 'custom_info.yaml'), 'utf-8');
 
 	const bibEntries = parseBibTeX(bibContent);
 	const customInfo = parseCustomInfo(yamlContent);
