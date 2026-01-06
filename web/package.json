@@ -4,8 +4,9 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev --port 30500 --open",
-		"build": "vite build",
+		"generate-data": "tsx scripts/generate-data.ts",
+		"dev": "pnpm generate-data && vite dev --port 30500 --open",
+		"build": "pnpm generate-data && vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -23,6 +24,7 @@
 		"svelte": "^5.45.6",
 		"svelte-check": "^4.3.4",
 		"tailwindcss": "^4.1.17",
+		"tsx": "^4.21.0",
 		"typescript": "^5.9.3",
 		"vite": "^7.2.6"
 	},
