@@ -6,42 +6,13 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { parse as parseYaml } from 'yaml';
+import { parseCustomInfo } from '../src/lib/parsers/yaml';
+import type { BibEntry, BibliographyItem, CustomInfo } from '../src/lib/types';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, '..', '..');
 const contentsDir = join(projectRoot, 'contents');
 const outputDir = join(__dirname, '..', 'static', 'data');
-
-interface BibEntry {
-	id: string;
-	type: string;
-	title: string;
-	author: string;
-	year: number;
-	publisher?: string;
-	series?: string;
-	isbn?: string;
-	url?: string;
-}
-
-interface CustomInfo {
-	tags?: string[];
-	review?: string;
-}
-
-interface CustomInfoYaml {
-	[entryId: string]: {
-		[siteId: string]: {
-			tags?: string[];
-			review?: string;
-		};
-	};
-}
-
-interface BibliographyItem extends BibEntry {
-	customInfo?: CustomInfo;
-}
 
 // Parse BibTeX content
 function parseBibTeX(content: string): BibEntry[] {
@@ -87,26 +58,6 @@ function parseFields(content: string): Record<string, string> {
 	}
 
 	return fields;
-}
-
-// Parse YAML content
-function parseCustomInfo(content: string, siteId = 'akirahayashi_com'): Map<string, CustomInfo> {
-	const parsed = parseYaml(content) as CustomInfoYaml;
-	const result = new Map<string, CustomInfo>();
-
-	if (!parsed) return result;
-
-	for (const [entryId, sites] of Object.entries(parsed)) {
-		const siteInfo = sites[siteId];
-		if (siteInfo) {
-			result.set(entryId, {
-				tags: siteInfo.tags,
-				review: siteInfo.review
-			});
-		}
-	}
-
-	return result;
 }
 
 // Merge entries with custom info
