@@ -3,6 +3,25 @@
 	import { formatAuthor } from '$lib/formatters/author';
 
 	let { data }: { data: PageData } = $props();
+
+	let searchQuery = $state('');
+
+	const filteredItems = $derived(() => {
+		if (!searchQuery.trim()) return data.items;
+
+		const query = searchQuery.toLowerCase();
+		return data.items.filter((item) => {
+			// Search in title
+			if (item.title.toLowerCase().includes(query)) return true;
+			// Search in author
+			if (item.author.toLowerCase().includes(query)) return true;
+			// Search in tags
+			if (item.customInfo?.tags?.some((tag) => tag.toLowerCase().includes(query))) return true;
+			// Search in review
+			if (item.customInfo?.review?.toLowerCase().includes(query)) return true;
+			return false;
+		});
+	});
 </script>
 
 <svelte:head>
@@ -18,12 +37,51 @@
 				Bibliography
 			</h1>
 			<p class="mt-2 font-light tracking-wide text-slate-400">文献コレクション</p>
+
+			<!-- Search input -->
+			<div class="relative mt-6">
+				<svg
+					class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="1.5"
+						d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+					/>
+				</svg>
+				<input
+					type="text"
+					bind:value={searchQuery}
+					placeholder="タイトル、著者、タグで検索..."
+					class="w-full rounded-xl border border-slate-700 bg-slate-800/80 py-3 pl-12 pr-4 text-slate-200 placeholder-slate-500 outline-none transition-all focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
+				/>
+				{#if searchQuery}
+					<button
+						type="button"
+						onclick={() => (searchQuery = '')}
+						class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-slate-300"
+					>
+						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="1.5"
+								d="M6 18L18 6M6 6l12 12"
+							/>
+						</svg>
+					</button>
+				{/if}
+			</div>
 		</div>
 	</header>
 
 	<main class="mx-auto max-w-4xl px-6 py-12">
 		<div class="space-y-8">
-			{#each data.items as item}
+			{#each filteredItems() as item}
 				<article
 					class="group relative overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8 shadow-xl backdrop-blur-sm transition-all duration-300 hover:border-amber-500/30 hover:shadow-amber-500/10"
 				>
@@ -162,16 +220,24 @@
 			{/each}
 		</div>
 
-		{#if data.items.length === 0}
+		{#if filteredItems().length === 0}
 			<div class="py-16 text-center">
-				<p class="text-slate-500">文献がありません</p>
+				{#if searchQuery}
+					<p class="text-slate-500">「{searchQuery}」に一致する文献が見つかりません</p>
+				{:else}
+					<p class="text-slate-500">文献がありません</p>
+				{/if}
 			</div>
 		{/if}
 	</main>
 
 	<footer class="border-t border-slate-700/50 py-8">
 		<div class="mx-auto max-w-4xl px-6 text-center text-sm text-slate-500">
-			<p>{data.items.length} 件の文献</p>
+			{#if searchQuery}
+				<p>{filteredItems().length} / {data.items.length} 件の文献</p>
+			{:else}
+				<p>{data.items.length} 件の文献</p>
+			{/if}
 		</div>
 	</footer>
 </div>
