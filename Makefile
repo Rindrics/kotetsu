@@ -1,12 +1,13 @@
-BIB_FILE = references.bib
-YAML_FILE = custom_info.yaml
+CONTENTS_DIR = contents
+BIB_FILE = $(CONTENTS_DIR)/references.bib
+YAML_FILE = $(CONTENTS_DIR)/custom_info.yaml
 DOCKER_RUN = docker run --rm -v $(PWD):/work -w /work
 BIBER_IMAGE = ghcr.io/rindrics/kotetsu/biber:latest
 
 .PHONY: format format-check lint check ci clean import build-biber validate-sync
 
 import:
-	@for f in *.bibtex; do \
+	@for f in $(CONTENTS_DIR)/*.bibtex; do \
 		if [ -f "$$f" ]; then \
 			cat "$$f" >> $(BIB_FILE); \
 			rm "$$f"; \
