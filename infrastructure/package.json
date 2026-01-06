@@ -1,0 +1,23 @@
+{
+  "name": "infrastructure",
+  "version": "1.0.0",
+  "description": "Infrastructure for kotetsu bibliography project",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "up": "pulumi up",
+    "preview": "pulumi preview",
+    "destroy": "pulumi destroy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.26.2",
+  "devDependencies": {
+    "@pulumi/cloudflare": "^6.12.0",
+    "@pulumi/pulumi": "^3.214.1",
+    "@types/node": "^25.0.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

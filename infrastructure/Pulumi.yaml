@@ -1,0 +1,6 @@
+name: kotetsu-infrastructure
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+description: Infrastructure for kotetsu bibliography project
