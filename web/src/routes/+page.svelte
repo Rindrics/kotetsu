@@ -5,10 +5,48 @@
 	let { data }: { data: PageData } = $props();
 
 	let searchQuery = $state('');
+	let showTagSuggestions = $state(false);
+	let selectedSuggestionIndex = $state(-1);
+
+	// Collect all unique tags
+	const allTags = $derived(() => {
+		const tags = new Set<string>();
+		for (const item of data.items) {
+			if (item.customInfo?.tags) {
+				for (const tag of item.customInfo.tags) {
+					tags.add(tag);
+				}
+			}
+		}
+		return Array.from(tags).sort();
+	});
+
+	// Check if in tag search mode (starts with #)
+	const isTagMode = $derived(() => searchQuery.startsWith('#'));
+
+	// Get tag query (text after #)
+	const tagQuery = $derived(() => (isTagMode() ? searchQuery.slice(1).toLowerCase() : ''));
+
+	// Filter tag suggestions
+	const tagSuggestions = $derived(() => {
+		if (!isTagMode()) return [];
+		const query = tagQuery();
+		return allTags().filter((tag) => tag.toLowerCase().includes(query));
+	});
 
 	const filteredItems = $derived(() => {
 		if (!searchQuery.trim()) return data.items;
 
+		// Tag search mode
+		if (isTagMode()) {
+			const query = tagQuery();
+			if (!query) return data.items;
+			return data.items.filter((item) =>
+				item.customInfo?.tags?.some((tag) => tag.toLowerCase().includes(query))
+			);
+		}
+
+		// Normal search mode
 		const query = searchQuery.toLowerCase();
 		return data.items.filter((item) => {
 			// Search in entry ID (for romanized author names)
@@ -24,6 +62,42 @@
 			return false;
 		});
 	});
+
+	function selectTag(tag: string) {
+		searchQuery = `#${tag}`;
+		showTagSuggestions = false;
+		selectedSuggestionIndex = -1;
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (!showTagSuggestions || tagSuggestions().length === 0) return;
+
+		if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, tagSuggestions().length - 1);
+		} else if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+		} else if (event.key === 'Enter' && selectedSuggestionIndex >= 0) {
+			event.preventDefault();
+			selectTag(tagSuggestions()[selectedSuggestionIndex]);
+		} else if (event.key === 'Escape') {
+			showTagSuggestions = false;
+			selectedSuggestionIndex = -1;
+		}
+	}
+
+	function handleInput() {
+		showTagSuggestions = isTagMode();
+		selectedSuggestionIndex = -1;
+	}
+
+	function handleBlur() {
+		// Delay to allow click on suggestion
+		setTimeout(() => {
+			showTagSuggestions = false;
+		}, 150);
+	}
 </script>
 
 <svelte:head>
@@ -31,7 +105,7 @@
 </svelte:head>
 
 <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-	<header class="border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
+	<header class="relative z-50 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
 		<div class="mx-auto max-w-4xl px-6 py-8">
 			<h1
 				class="bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 bg-clip-text font-serif text-4xl font-bold tracking-tight text-transparent"
@@ -58,7 +132,11 @@
 				<input
 					type="text"
 					bind:value={searchQuery}
-					placeholder="タイトル、著者、タグで検索..."
+					oninput={handleInput}
+					onkeydown={handleKeydown}
+					onblur={handleBlur}
+					onfocus={() => (showTagSuggestions = isTagMode())}
+					placeholder="検索... (#でタグ検索)"
 					class="w-full rounded-xl border border-slate-700 bg-slate-800/80 py-3 pl-12 pr-4 text-slate-200 placeholder-slate-500 outline-none transition-all focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
 				/>
 				{#if searchQuery}
@@ -76,6 +154,26 @@
 							/>
 						</svg>
 					</button>
+				{/if}
+
+				<!-- Tag suggestions dropdown -->
+				{#if showTagSuggestions && tagSuggestions().length > 0}
+					<div
+						class="absolute left-0 right-0 top-full z-50 mt-2 flex flex-wrap gap-2 rounded-xl border border-slate-700 bg-slate-800 p-3 shadow-2xl"
+					>
+						{#each tagSuggestions() as tag, index}
+							<button
+								type="button"
+								onclick={() => selectTag(tag)}
+								class="rounded-lg px-3 py-1.5 text-sm transition-colors {index ===
+								selectedSuggestionIndex
+									? 'bg-amber-500/20 text-amber-200'
+									: 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'}"
+							>
+								#{tag}
+							</button>
+						{/each}
+					</div>
 				{/if}
 			</div>
 		</div>
