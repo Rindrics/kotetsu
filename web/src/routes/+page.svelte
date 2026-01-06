@@ -93,10 +93,7 @@
 	}
 
 	function handleBlur() {
-		// Delay to allow click on suggestion
-		setTimeout(() => {
-			showTagSuggestions = false;
-		}, 150);
+		showTagSuggestions = false;
 	}
 </script>
 
@@ -164,7 +161,7 @@
 						{#each tagSuggestions() as tag, index}
 							<button
 								type="button"
-								onclick={() => selectTag(tag)}
+								onmousedown={() => selectTag(tag)}
 								class="rounded-lg px-3 py-1.5 text-sm transition-colors {index ===
 								selectedSuggestionIndex
 									? 'bg-amber-500/20 text-amber-200'
