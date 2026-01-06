@@ -7,7 +7,27 @@ on:
   pull_request:
 
 jobs:
-  check:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      contents: ${{ steps.filter.outputs.contents }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            contents:
+              - 'contents/**'
+              - 'Makefile'
+            web:
+              - 'web/**'
+
+  check-contents:
+    needs: changes
+    if: ${{ needs.changes.outputs.contents == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,3 +37,34 @@ jobs:
 
       - name: Run format check and lint
         run: make ci BIBER_IMAGE=${{ vars.BIBER_IMAGE }}:latest
+
+  check-web:
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm check
+
+      - name: Build
+        run: pnpm build
