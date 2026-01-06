@@ -47,6 +47,7 @@ jobs:
 
       - name: Set Pulumi config
         run: |
+          pulumi stack select prd
           pulumi config set cloudflareAccountId ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} --non-interactive
 
       - name: Pulumi preview
@@ -88,6 +89,7 @@ jobs:
 
       - name: Set Pulumi config
         run: |
+          pulumi stack select prd
           pulumi config set cloudflareAccountId ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} --non-interactive
 
       - name: Pulumi up
