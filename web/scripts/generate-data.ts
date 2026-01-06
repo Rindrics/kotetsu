@@ -73,13 +73,17 @@ function parseBibTeX(content: string): BibEntry[] {
 
 function parseFields(content: string): Record<string, string> {
 	const fields: Record<string, string> = {};
-	const fieldRegex = /(\w+)\s*=\s*(?:\{([^}]*)\}|(\d+))/g;
+	// Match field = {value} or field = "value" or field = bareword
+	const fieldRegex = /\s*(\w+)\s*=\s*(?:\{((?:[^{}]|\{[^{}]*\})*)\}|"([^"]*)"|(\w+))\s*,?/gs;
 	let match;
 
 	while ((match = fieldRegex.exec(content)) !== null) {
 		const name = match[1].toLowerCase();
-		const value = match[2] ?? match[3];
-		fields[name] = value;
+		// value can be in braces (match[2]), quotes (match[3]), or be a bare word/number (match[4])
+		const value = match[2] ?? match[3] ?? match[4];
+		if (value !== undefined) {
+			fields[name] = value.trim();
+		}
 	}
 
 	return fields;
