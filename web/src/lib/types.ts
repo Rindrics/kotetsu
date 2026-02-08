@@ -14,9 +14,11 @@ export interface BibEntry {
 }
 
 /**
- * Custom metadata from YAML file (blog-specific info)
+ * Custom metadata from YAML file - INTERNAL representation (includes memo)
+ * Used during parsing and data processing
+ * @internal Never expose to frontend
  */
-export interface CustomInfo {
+export interface CustomInfoFull {
 	tags?: string[];
 	review?: string | string[];
 	memo?: string[];
@@ -24,10 +26,26 @@ export interface CustomInfo {
 }
 
 /**
+ * Custom metadata for frontend consumption (memo excluded)
+ * Type-safe representation of what frontend can receive
+ */
+export interface CustomInfoFrontend {
+	tags?: string[];
+	review?: string | string[];
+	readDate?: string; // ISO 8601 format (YYYY-MM-DD)
+}
+
+/**
+ * Backward compatibility alias
+ * @deprecated Use CustomInfoFull or CustomInfoFrontend instead
+ */
+export type CustomInfo = CustomInfoFrontend;
+
+/**
  * Merged bibliography item combining BibTeX entry and custom info
  */
 export interface BibliographyItem extends BibEntry {
-	customInfo?: CustomInfo;
+	customInfo?: CustomInfoFrontend;
 }
 
 /**
@@ -35,12 +53,7 @@ export interface BibliographyItem extends BibEntry {
  */
 export interface CustomInfoYaml {
 	[entryId: string]: {
-		[siteId: string]: {
-			tags?: string[];
-			review?: string | string[];
-			memo?: string[];
-			readDate?: string; // ISO 8601 format (YYYY-MM-DD)
-		};
+		[siteId: string]: CustomInfoFull;
 	};
 }
 

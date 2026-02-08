@@ -1,5 +1,5 @@
 import { parse } from 'yaml';
-import type { CustomInfo } from '../types';
+import type { CustomInfoFull } from '../types';
 
 /**
  * Default site ID for custom info lookup
@@ -14,14 +14,15 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Parse YAML content and return a map of entry ID to CustomInfo
+ * Parse YAML content and return a map of entry ID to CustomInfoFull
  * Returns empty Map on invalid inputs or parse errors
+ * @internal Returns full info including memo (internal-only field)
  */
 export function parseCustomInfo(
 	content: string,
 	siteId: string = DEFAULT_SITE_ID
-): Map<string, CustomInfo> {
-	const result = new Map<string, CustomInfo>();
+): Map<string, CustomInfoFull> {
+	const result = new Map<string, CustomInfoFull>();
 
 	let parsed: unknown;
 	try {

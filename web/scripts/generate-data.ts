@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseCustomInfo } from '../src/lib/parsers/yaml';
-import type { BibEntry, BibliographyItem, CustomInfo } from '../src/lib/types';
+import type { BibEntry, BibliographyItem, CustomInfoFull, CustomInfoFrontend } from '../src/lib/types';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, '..', '..');
@@ -60,33 +60,35 @@ function parseFields(content: string): Record<string, string> {
 	return fields;
 }
 
-// Merge entries with custom info
+/**
+ * Convert internal CustomInfoFull to frontend-safe CustomInfoFrontend
+ * Explicitly excludes memo field to prevent accidental leakage
+ */
+function toFrontendInfo(info: CustomInfoFull): CustomInfoFrontend | undefined {
+	const frontendInfo: CustomInfoFrontend = {
+		tags: info.tags,
+		review: info.review,
+		readDate: info.readDate
+	};
+
+	// Only include customInfo if at least one field is present
+	const hasContent = Object.values(frontendInfo).some((v) => v !== undefined);
+	return hasContent ? frontendInfo : undefined;
+}
+
+/**
+ * Merge entries with custom info
+ * Converts internal CustomInfoFull to frontend-safe CustomInfoFrontend
+ */
 function mergeBibliography(
 	entries: BibEntry[],
-	customInfo: Map<string, CustomInfo>
+	customInfo: Map<string, CustomInfoFull>
 ): BibliographyItem[] {
 	return entries.map((entry) => {
 		const info = customInfo.get(entry.id);
-		if (!info) {
-			return {
-				...entry,
-				customInfo: undefined
-			};
-		}
-
-		// memo is intentionally excluded from frontend output
-		const frontendInfo = {
-			tags: info.tags,
-			review: info.review,
-			readDate: info.readDate
-		};
-
-		// Only include customInfo if at least one field is present
-		const hasContent = Object.values(frontendInfo).some((v) => v !== undefined);
-
 		return {
 			...entry,
-			customInfo: hasContent ? frontendInfo : undefined
+			customInfo: info ? toFrontendInfo(info) : undefined
 		};
 	});
 }
