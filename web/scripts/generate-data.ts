@@ -67,16 +67,26 @@ function mergeBibliography(
 ): BibliographyItem[] {
 	return entries.map((entry) => {
 		const info = customInfo.get(entry.id);
+		if (!info) {
+			return {
+				...entry,
+				customInfo: undefined
+			};
+		}
+
+		// memo is intentionally excluded from frontend output
+		const frontendInfo = {
+			tags: info.tags,
+			review: info.review,
+			readDate: info.readDate
+		};
+
+		// Only include customInfo if at least one field is present
+		const hasContent = Object.values(frontendInfo).some((v) => v !== undefined);
+
 		return {
 			...entry,
-			customInfo: info
-				? {
-						tags: info.tags,
-						review: info.review,
-						readDate: info.readDate
-						// memo is intentionally excluded from frontend output
-					}
-				: undefined
+			customInfo: hasContent ? frontendInfo : undefined
 		};
 	});
 }
