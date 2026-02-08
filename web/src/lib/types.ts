@@ -18,7 +18,7 @@ export interface BibEntry {
  */
 export interface CustomInfo {
 	tags?: string[];
-	review?: string;
+	review?: string | string[];
 	memo?: string[];
 	readDate?: string; // ISO 8601 format (YYYY-MM-DD)
 }
@@ -37,7 +37,7 @@ export interface CustomInfoYaml {
 	[entryId: string]: {
 		[siteId: string]: {
 			tags?: string[];
-			review?: string;
+			review?: string | string[];
 			memo?: string[];
 			readDate?: string; // ISO 8601 format (YYYY-MM-DD)
 		};

@@ -50,9 +50,12 @@ export function parseCustomInfo(
 		const validTags =
 			tags === undefined || (Array.isArray(tags) && tags.every((t) => typeof t === 'string'));
 
-		// Validate review (string or undefined)
+		// Validate review (string, array of strings, or undefined)
 		const review = siteInfo.review;
-		const validReview = review === undefined || typeof review === 'string';
+		const validReview =
+			review === undefined ||
+			typeof review === 'string' ||
+			(Array.isArray(review) && review.every((r) => typeof r === 'string'));
 
 		// Validate memo (array of strings or undefined)
 		const memo = siteInfo.memo;
