@@ -54,10 +54,21 @@ export function parseCustomInfo(
 		const review = siteInfo.review;
 		const validReview = review === undefined || typeof review === 'string';
 
-		if (validTags && validReview) {
+		// Validate memo (array of strings or undefined)
+		const memo = siteInfo.memo;
+		const validMemo =
+			memo === undefined || (Array.isArray(memo) && memo.every((m) => typeof m === 'string'));
+
+		// Validate readDate (string or undefined)
+		const readDate = siteInfo.readDate;
+		const validReadDate = readDate === undefined || typeof readDate === 'string';
+
+		if (validTags && validReview && validMemo && validReadDate) {
 			result.set(entryId, {
 				tags: tags as string[] | undefined,
-				review: review as string | undefined
+				review: review as string | undefined,
+				memo: memo as string[] | undefined,
+				readDate: readDate as string | undefined
 			});
 		}
 	}

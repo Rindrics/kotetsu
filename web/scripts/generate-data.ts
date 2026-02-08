@@ -72,7 +72,8 @@ function mergeBibliography(
 			customInfo: info
 				? {
 						tags: info.tags,
-						review: info.review
+						review: info.review,
+						readDate: info.readDate
 						// memo is intentionally excluded from frontend output
 					}
 				: undefined
