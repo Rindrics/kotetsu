@@ -1,5 +1,5 @@
 import { parse } from 'yaml';
-import type { CustomInfo } from '../types';
+import type { CustomInfoFull } from '../types';
 
 /**
  * Default site ID for custom info lookup
@@ -14,14 +14,15 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Parse YAML content and return a map of entry ID to CustomInfo
+ * Parse YAML content and return a map of entry ID to CustomInfoFull
  * Returns empty Map on invalid inputs or parse errors
+ * @internal Returns full info including memo (internal-only field)
  */
 export function parseCustomInfo(
 	content: string,
 	siteId: string = DEFAULT_SITE_ID
-): Map<string, CustomInfo> {
-	const result = new Map<string, CustomInfo>();
+): Map<string, CustomInfoFull> {
+	const result = new Map<string, CustomInfoFull>();
 
 	let parsed: unknown;
 	try {
@@ -50,14 +51,28 @@ export function parseCustomInfo(
 		const validTags =
 			tags === undefined || (Array.isArray(tags) && tags.every((t) => typeof t === 'string'));
 
-		// Validate review (string or undefined)
+		// Validate review (string, array of strings, or undefined)
 		const review = siteInfo.review;
-		const validReview = review === undefined || typeof review === 'string';
+		const validReview =
+			review === undefined ||
+			typeof review === 'string' ||
+			(Array.isArray(review) && review.every((r) => typeof r === 'string'));
 
-		if (validTags && validReview) {
+		// Validate memo (array of strings or undefined)
+		const memo = siteInfo.memo;
+		const validMemo =
+			memo === undefined || (Array.isArray(memo) && memo.every((m) => typeof m === 'string'));
+
+		// Validate readDate (string or undefined)
+		const readDate = siteInfo.readDate;
+		const validReadDate = readDate === undefined || typeof readDate === 'string';
+
+		if (validTags && validReview && validMemo && validReadDate) {
 			result.set(entryId, {
 				tags: tags as string[] | undefined,
-				review: review as string | undefined
+				review: review as string | undefined,
+				memo: memo as string[] | undefined,
+				readDate: readDate as string | undefined
 			});
 		}
 	}

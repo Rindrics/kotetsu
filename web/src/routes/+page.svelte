@@ -57,8 +57,13 @@
 			if (item.author.toLowerCase().includes(query)) return true;
 			// Search in tags
 			if (item.customInfo?.tags?.some((tag) => tag.toLowerCase().includes(query))) return true;
-			// Search in review
-			if (item.customInfo?.review?.toLowerCase().includes(query)) return true;
+			// Search in review (string or array of strings)
+			if (item.customInfo?.review) {
+				const reviewText = Array.isArray(item.customInfo.review)
+					? item.customInfo.review.join(' ')
+					: item.customInfo.review;
+				if (reviewText.toLowerCase().includes(query)) return true;
+			}
 			return false;
 		});
 	});
