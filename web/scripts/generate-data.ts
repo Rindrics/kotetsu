@@ -65,10 +65,19 @@ function mergeBibliography(
 	entries: BibEntry[],
 	customInfo: Map<string, CustomInfo>
 ): BibliographyItem[] {
-	return entries.map((entry) => ({
-		...entry,
-		customInfo: customInfo.get(entry.id)
-	}));
+	return entries.map((entry) => {
+		const info = customInfo.get(entry.id);
+		return {
+			...entry,
+			customInfo: info
+				? {
+						tags: info.tags,
+						review: info.review
+						// memo is intentionally excluded from frontend output
+					}
+				: undefined
+		};
+	});
 }
 
 // Main

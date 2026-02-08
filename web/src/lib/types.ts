@@ -19,6 +19,7 @@ export interface BibEntry {
 export interface CustomInfo {
 	tags?: string[];
 	review?: string;
+	memo?: string;
 }
 
 /**
@@ -36,6 +37,7 @@ export interface CustomInfoYaml {
 		[siteId: string]: {
 			tags?: string[];
 			review?: string;
+			memo?: string;
 		};
 	};
 }
