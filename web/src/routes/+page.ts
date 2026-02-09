@@ -1,9 +1,8 @@
 import type { BibEntry, CustomInfoFrontend } from '$lib/types';
 import { bibliographyData } from '$lib/data/bibliography';
+import { DEFAULT_SITE_ID } from '$lib/config/constants';
 
 export const prerender = true;
-
-const DEFAULT_SITE_ID = 'akirahayashi_com';
 
 export function load() {
 	// Transform bibliography data to frontend format: extract site-specific customInfo
