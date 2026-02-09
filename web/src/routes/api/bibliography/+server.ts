@@ -1,6 +1,7 @@
 import type { RequestHandler } from './$types';
 import type { BibEntry, CustomInfoFrontend } from '$lib/types';
 import { json } from '@sveltejs/kit';
+import { createHash } from 'crypto';
 import { bibliographyData } from '$lib/data/bibliography';
 import { filterBySiteId } from '$lib/api/filter';
 
@@ -46,9 +47,14 @@ export const GET: RequestHandler = async ({ url }) => {
 		customInfo: item.customInfo?.[siteId]
 	})) as Array<BibEntry & { customInfo?: CustomInfoFrontend }>;
 
-	// 4. Return with cache headers
+	// 4. Generate ETag from response content
+	const responseBody = JSON.stringify(transformed);
+	const etag = `"${createHash('sha256').update(responseBody).digest('hex').slice(0, 16)}"`;
+
+	// 5. Return with cache and ETag headers
 	return json(transformed, {
 		headers: {
+			'ETag': etag,
 			'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
 			'Content-Type': 'application/json'
 		}
