@@ -22,7 +22,6 @@
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.17",
 		"@types/node": "^25.0.3",
-		"@vitest/ui": "^2.2.0",
 		"daisyui": "^5.5.14",
 		"svelte": "^5.45.6",
 		"svelte-check": "^4.3.4",
@@ -30,7 +29,7 @@
 		"tsx": "^4.21.0",
 		"typescript": "^5.9.3",
 		"vite": "^7.2.6",
-		"vitest": "^2.2.0"
+		"vitest": "^1.6.0"
 	},
 	"dependencies": {
 		"yaml": "^2.8.2"
