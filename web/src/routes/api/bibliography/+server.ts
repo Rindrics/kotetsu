@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import type { BibEntry, CustomInfoFrontend } from '$lib/types';
-import { json, error } from '@sveltejs/kit';
+import { json } from '@sveltejs/kit';
 import { bibliographyData } from '$lib/data/bibliography';
 import { filterBySiteId } from '$lib/api/filter';
 
@@ -25,19 +25,19 @@ export const GET: RequestHandler = async ({ url }) => {
 	const siteId = url.searchParams.get('siteId');
 
 	if (!siteId) {
-		throw error(400, { message: 'Missing required parameter: siteId' });
+		return json({ error: 'Missing required parameter: siteId' }, { status: 400 });
 	}
 
 	// Validate siteId format: alphanumeric, underscore, dot only
 	if (!/^[a-zA-Z0-9_.]+$/.test(siteId)) {
-		throw error(400, { message: 'Invalid siteId format' });
+		return json({ error: 'Invalid siteId format' }, { status: 400 });
 	}
 
 	// 2. Filter by siteId from in-memory data
 	const filtered = filterBySiteId(bibliographyData, siteId);
 
 	if (filtered.length === 0) {
-		throw error(404, { message: `siteId not found: ${siteId}` });
+		return json({ error: `siteId not found: ${siteId}` }, { status: 404 });
 	}
 
 	// 3. Transform to frontend format: extract site-specific customInfo
