@@ -79,16 +79,31 @@ function toFrontendInfo(info: CustomInfoFull): CustomInfoFrontend | undefined {
 /**
  * Merge entries with custom info
  * Converts internal CustomInfoFull to frontend-safe CustomInfoFrontend
+ * Supports multiple sites via customInfo[siteId]
  */
 function mergeBibliography(
 	entries: BibEntry[],
-	customInfo: Map<string, CustomInfoFull>
+	customInfoByEntry: Map<string, { [siteId: string]: CustomInfoFull }>
 ): BibliographyItem[] {
 	return entries.map((entry) => {
-		const info = customInfo.get(entry.id);
+		const siteInfoMap = customInfoByEntry.get(entry.id);
+
+		if (!siteInfoMap || Object.keys(siteInfoMap).length === 0) {
+			return { ...entry };
+		}
+
+		// Convert per-site CustomInfoFull to frontend-safe CustomInfoFrontend
+		const customInfo: { [siteId: string]: CustomInfoFrontend } = {};
+		for (const [siteId, info] of Object.entries(siteInfoMap)) {
+			const frontendInfo = toFrontendInfo(info);
+			if (frontendInfo) {
+				customInfo[siteId] = frontendInfo;
+			}
+		}
+
 		return {
 			...entry,
-			customInfo: info ? toFrontendInfo(info) : undefined
+			customInfo: Object.keys(customInfo).length > 0 ? customInfo : undefined
 		};
 	});
 }

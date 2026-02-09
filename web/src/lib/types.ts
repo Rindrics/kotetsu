@@ -43,9 +43,12 @@ export type CustomInfo = CustomInfoFrontend;
 
 /**
  * Merged bibliography item combining BibTeX entry and custom info
+ * Supports multiple sites via customInfo[siteId]
  */
 export interface BibliographyItem extends BibEntry {
-	customInfo?: CustomInfoFrontend;
+	customInfo?: {
+		[siteId: string]: CustomInfoFrontend;
+	};
 }
 
 /**

@@ -1,21 +1,19 @@
-import type { BibliographyItem } from '$lib/types';
+import type { BibEntry, CustomInfoFrontend } from '$lib/types';
+import { bibliographyData } from '$lib/data/bibliography';
 
 export const prerender = true;
 
-export async function load({ fetch }: { fetch: typeof globalThis.fetch }) {
-	try {
-		const response = await fetch('/data/bibliography.json');
+const DEFAULT_SITE_ID = 'akirahayashi_com';
 
-		if (!response.ok) {
-			console.error(`Failed to fetch bibliography: HTTP ${response.status}`);
-			return { items: [] as BibliographyItem[] };
-		}
+export function load() {
+	// Transform bibliography data to frontend format: extract site-specific customInfo
+	const items: Array<BibEntry & { customInfo?: CustomInfoFrontend }> = bibliographyData.map(
+		(item) => ({
+			...item,
+			customInfo: item.customInfo?.[DEFAULT_SITE_ID]
+		})
+	);
 
-		const items: BibliographyItem[] = await response.json();
-		return { items };
-	} catch (error) {
-		console.error('Failed to load bibliography:', error);
-		return { items: [] as BibliographyItem[] };
-	}
+	return { items };
 }
 
