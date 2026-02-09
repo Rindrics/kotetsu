@@ -41,7 +41,7 @@ import { filterBySiteId } from '$lib/api/filter';
  *   GET /api/bibliography?siteId=akirahayashi_com
  *   GET /api/bibliography?siteId=invalid (400 if no entries)
  */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, request }) => {
 	// 1. Validate siteId parameter
 	const siteId = url.searchParams.get('siteId');
 
@@ -76,7 +76,13 @@ export const GET: RequestHandler = async ({ url }) => {
 	const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 	const etag = `"${hashHex.slice(0, 16)}"`;
 
-	// 5. Return with cache and ETag headers
+	// 5. Check If-None-Match header for cache validation
+	const ifNoneMatch = request.headers.get('if-none-match');
+	if (ifNoneMatch === etag) {
+		return new Response(null, { status: 304 });
+	}
+
+	// 6. Return with cache and ETag headers
 	return json(transformed, {
 		headers: {
 			'ETag': etag,
