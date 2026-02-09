@@ -12,7 +12,7 @@ import type { BibEntry, BibliographyItem, CustomInfoFull, CustomInfoFrontend } f
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, '..', '..');
 const contentsDir = join(projectRoot, 'contents');
-const outputDir = join(__dirname, '..', 'static', 'data');
+const outputDir = join(__dirname, '..', 'src', 'lib', 'data');
 
 // Parse BibTeX content
 function parseBibTeX(content: string): BibEntry[] {
@@ -107,9 +107,13 @@ function main() {
 	// Ensure output directory exists
 	mkdirSync(outputDir, { recursive: true });
 
-	// Write JSON
-	const outputPath = join(outputDir, 'bibliography.json');
-	writeFileSync(outputPath, JSON.stringify(items, null, 2));
+	// Write TypeScript module
+	const outputPath = join(outputDir, 'bibliography.ts');
+	const moduleContent = `import type { BibliographyItem } from '../types';
+
+export const bibliographyData: BibliographyItem[] = ${JSON.stringify(items, null, 2)};
+`;
+	writeFileSync(outputPath, moduleContent);
 
 	console.log(`Generated ${outputPath} with ${items.length} entries`);
 }
