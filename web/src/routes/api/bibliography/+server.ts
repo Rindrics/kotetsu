@@ -1,7 +1,6 @@
 import type { RequestHandler } from './$types';
 import type { BibEntry, CustomInfoFrontend } from '$lib/types';
 import { json } from '@sveltejs/kit';
-import { createHash } from 'crypto';
 import { bibliographyData } from '$lib/data/bibliography';
 import { filterBySiteId } from '$lib/api/filter';
 
@@ -68,9 +67,14 @@ export const GET: RequestHandler = async ({ url }) => {
 		customInfo: item.customInfo?.[siteId]
 	})) as Array<BibEntry & { customInfo?: CustomInfoFrontend }>;
 
-	// 4. Generate ETag from response content
+	// 4. Generate ETag from response content using Web Crypto API
 	const responseBody = JSON.stringify(transformed);
-	const etag = `"${createHash('sha256').update(responseBody).digest('hex').slice(0, 16)}"`;
+	const encoder = new TextEncoder();
+	const data = encoder.encode(responseBody);
+	const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+	const hashArray = Array.from(new Uint8Array(hashBuffer));
+	const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+	const etag = `"${hashHex.slice(0, 16)}"`;
 
 	// 5. Return with cache and ETag headers
 	return json(transformed, {
