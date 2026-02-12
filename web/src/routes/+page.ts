@@ -1,21 +1,30 @@
-import type { BibliographyItem } from '$lib/types';
+import type { BibEntry, CustomInfoFrontend } from '$lib/types';
+import { bibliographyData } from '$lib/data/bibliography';
+import { DEFAULT_SITE_ID } from '$lib/config/constants';
 
 export const prerender = true;
 
-export async function load({ fetch }: { fetch: typeof globalThis.fetch }) {
-	try {
-		const response = await fetch('/data/bibliography.json');
+export function load() {
+	// Transform bibliography data to frontend format: extract site-specific customInfo
+	// Explicitly exclude memo field for security
+	const items: Array<BibEntry & { customInfo?: CustomInfoFrontend }> = bibliographyData.map(
+		(item) => {
+			const siteInfo = item.customInfo?.[DEFAULT_SITE_ID];
+			const customInfo: CustomInfoFrontend | undefined = siteInfo
+				? {
+						tags: siteInfo.tags,
+						review: siteInfo.review,
+						readDate: siteInfo.readDate
+					}
+				: undefined;
 
-		if (!response.ok) {
-			console.error(`Failed to fetch bibliography: HTTP ${response.status}`);
-			return { items: [] as BibliographyItem[] };
+			return {
+				...item,
+				customInfo
+			};
 		}
+	);
 
-		const items: BibliographyItem[] = await response.json();
-		return { items };
-	} catch (error) {
-		console.error('Failed to load bibliography:', error);
-		return { items: [] as BibliographyItem[] };
-	}
+	return { items };
 }
 

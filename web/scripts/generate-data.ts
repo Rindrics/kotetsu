@@ -12,7 +12,7 @@ import type { BibEntry, BibliographyItem, CustomInfoFull, CustomInfoFrontend } f
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, '..', '..');
 const contentsDir = join(projectRoot, 'contents');
-const outputDir = join(__dirname, '..', 'static', 'data');
+const outputDir = join(__dirname, '..', 'src', 'lib', 'data');
 
 // Parse BibTeX content
 function parseBibTeX(content: string): BibEntry[] {
@@ -79,16 +79,31 @@ function toFrontendInfo(info: CustomInfoFull): CustomInfoFrontend | undefined {
 /**
  * Merge entries with custom info
  * Converts internal CustomInfoFull to frontend-safe CustomInfoFrontend
+ * Supports multiple sites via customInfo[siteId]
  */
 function mergeBibliography(
 	entries: BibEntry[],
-	customInfo: Map<string, CustomInfoFull>
+	customInfoByEntry: Map<string, { [siteId: string]: CustomInfoFull }>
 ): BibliographyItem[] {
 	return entries.map((entry) => {
-		const info = customInfo.get(entry.id);
+		const siteInfoMap = customInfoByEntry.get(entry.id);
+
+		if (!siteInfoMap || Object.keys(siteInfoMap).length === 0) {
+			return { ...entry };
+		}
+
+		// Convert per-site CustomInfoFull to frontend-safe CustomInfoFrontend
+		const customInfo: { [siteId: string]: CustomInfoFrontend } = {};
+		for (const [siteId, info] of Object.entries(siteInfoMap)) {
+			const frontendInfo = toFrontendInfo(info);
+			if (frontendInfo) {
+				customInfo[siteId] = frontendInfo;
+			}
+		}
+
 		return {
 			...entry,
-			customInfo: info ? toFrontendInfo(info) : undefined
+			customInfo: Object.keys(customInfo).length > 0 ? customInfo : undefined
 		};
 	});
 }
@@ -107,9 +122,13 @@ function main() {
 	// Ensure output directory exists
 	mkdirSync(outputDir, { recursive: true });
 
-	// Write JSON
-	const outputPath = join(outputDir, 'bibliography.json');
-	writeFileSync(outputPath, JSON.stringify(items, null, 2));
+	// Write TypeScript module
+	const outputPath = join(outputDir, 'bibliography.ts');
+	const moduleContent = `import type { BibliographyItem } from '../types';
+
+export const bibliographyData: BibliographyItem[] = ${JSON.stringify(items, null, 2)};
+`;
+	writeFileSync(outputPath, moduleContent);
 
 	console.log(`Generated ${outputPath} with ${items.length} entries`);
 }
