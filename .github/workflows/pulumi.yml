@@ -19,6 +19,8 @@ jobs:
     name: Preview Infrastructure Changes
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      id-token: write
     defaults:
       run:
         working-directory: infrastructure
@@ -42,6 +44,12 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: infrastructure/pnpm-lock.yaml
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::197517026284:role/github-actions-rindrics
+          aws-region: us-east-1
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -49,6 +57,8 @@ jobs:
         run: |
           pulumi stack select prd
           pulumi config set cloudflareAccountId ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} --non-interactive
+          pulumi config set kotetsu:allowedEmailAddresses ${{ vars.ALLOWED_EMAIL_ADDRESSES }} --non-interactive
+          pulumi config set --secret kotetsu:githubDispatchToken ${{ secrets.GITHUB_TOKEN }} --non-interactive
 
       - name: Pulumi preview
         uses: pulumi/actions@v5
@@ -61,6 +71,8 @@ jobs:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      id-token: write
     defaults:
       run:
         working-directory: infrastructure
@@ -84,6 +96,12 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: infrastructure/pnpm-lock.yaml
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::197517026284:role/github-actions-rindrics
+          aws-region: us-east-1
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -91,6 +109,8 @@ jobs:
         run: |
           pulumi stack select prd
           pulumi config set cloudflareAccountId ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} --non-interactive
+          pulumi config set kotetsu:allowedEmailAddresses ${{ vars.ALLOWED_EMAIL_ADDRESSES }} --non-interactive
+          pulumi config set --secret kotetsu:githubDispatchToken ${{ secrets.GITHUB_TOKEN }} --non-interactive
 
       - name: Pulumi up
         uses: pulumi/actions@v5

@@ -1,5 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as cloudflare from "@pulumi/cloudflare";
+import * as emailSetup from "./email-setup";
 
 const config = new pulumi.Config();
 
@@ -23,3 +24,10 @@ const pagesDomain = new cloudflare.PagesDomain("kotetsu-custom-domain", {
 // Export the custom domain
 export const domainName = pagesDomain.name;
 export const status = pagesDomain.status;
+
+// Export SES/Lambda email setup
+export const emailTopicArn = emailSetup.topicArn;
+export const emailLambdaFunctionName = emailSetup.lambdaFunctionName;
+export const emailLambdaFunctionArn = emailSetup.lambdaFunctionArn;
+export const emailRuleSetName = emailSetup.ruleSetName;
+export const emailReceiverAddress = emailSetup.sesReceiverAddress;

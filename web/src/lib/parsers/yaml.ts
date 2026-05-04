@@ -1,11 +1,40 @@
 import { parse } from 'yaml';
-import type { CustomInfoFull } from '../types';
+import type { CustomInfoFull, ParsedEntryInfo } from '../types';
 
 /**
  * Check if value is a plain object
  */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Validate readDate format (YYYY-MM-DD)
+ */
+function isValidReadDate(value: unknown): boolean {
+	if (typeof value !== 'string') {
+		return false;
+	}
+
+	const match = value.match(/^\d{4}-\d{2}-\d{2}$/);
+	if (!match) {
+		return false;
+	}
+
+	const [, , month, day] = match.map((s) => parseInt(s, 10));
+
+	// Validate month and day ranges
+	if (month < 1 || month > 12 || day < 1 || day > 31) {
+		return false;
+	}
+
+	// Validate with Date constructor for leap year and actual day validity
+	const date = new Date(`${value}T00:00:00Z`);
+	if (isNaN(date.getTime())) {
+		return false;
+	}
+
+	return true;
 }
 
 /**
@@ -33,20 +62,17 @@ function validateCustomInfo(value: unknown): value is CustomInfoFull {
 	const validMemo =
 		memo === undefined || (Array.isArray(memo) && memo.every((m) => typeof m === 'string'));
 
-	// Validate readDate (string or undefined)
-	const readDate = value.readDate;
-	const validReadDate = readDate === undefined || typeof readDate === 'string';
-
-	return validTags && validReview && validMemo && validReadDate;
+	return validTags && validReview && validMemo;
 }
 
 /**
- * Parse YAML content and return a map of entry ID to per-site CustomInfoFull
+ * Parse YAML content and return a map of entry ID to ParsedEntryInfo
+ * Extracts readDate at entry level and per-site CustomInfoFull
  * Returns empty Map on invalid inputs or parse errors
  * @internal Returns full info including memo (internal-only field)
  */
-export function parseCustomInfo(content: string): Map<string, { [siteId: string]: CustomInfoFull }> {
-	const result = new Map<string, { [siteId: string]: CustomInfoFull }>();
+export function parseCustomInfo(content: string): Map<string, ParsedEntryInfo> {
+	const result = new Map<string, ParsedEntryInfo>();
 
 	let parsed: unknown;
 	try {
@@ -60,21 +86,25 @@ export function parseCustomInfo(content: string): Map<string, { [siteId: string]
 		return result;
 	}
 
-	for (const [entryId, sites] of Object.entries(parsed)) {
-		if (!isPlainObject(sites)) {
+	for (const [entryId, entryValue] of Object.entries(parsed)) {
+		if (!isPlainObject(entryValue)) {
 			continue;
 		}
 
-		const siteMap: { [siteId: string]: CustomInfoFull } = {};
+		const readDate = isValidReadDate(entryValue.readDate)
+			? (entryValue.readDate as string)
+			: undefined;
+		const sites: { [siteId: string]: CustomInfoFull } = {};
 
-		for (const [siteId, siteInfo] of Object.entries(sites)) {
-			if (validateCustomInfo(siteInfo)) {
-				siteMap[siteId] = siteInfo;
+		for (const [key, value] of Object.entries(entryValue)) {
+			if (key === 'readDate') continue;
+			if (validateCustomInfo(value)) {
+				sites[key] = value;
 			}
 		}
 
-		if (Object.keys(siteMap).length > 0) {
-			result.set(entryId, siteMap);
+		if (Object.keys(sites).length > 0 || readDate !== undefined) {
+			result.set(entryId, { readDate, sites });
 		}
 	}
 

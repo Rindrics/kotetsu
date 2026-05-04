@@ -9,11 +9,11 @@ const mockBibliographyData: BibliographyItem[] = [
 		title: 'Test Book 1',
 		author: 'Author A',
 		year: 2020,
+		readDate: '2020-01-01',
 		customInfo: {
 			foobar_com: {
 				tags: ['test', 'documentation'],
-				review: 'A great book',
-				readDate: '2020-01-01'
+				review: 'A great book'
 			}
 		}
 	},
@@ -23,11 +23,11 @@ const mockBibliographyData: BibliographyItem[] = [
 		title: 'Test Book 2',
 		author: 'Author B',
 		year: 2021,
+		readDate: '2021-06-15',
 		customInfo: {
 			foobar_com: {
 				tags: ['advanced'],
-				review: ['Multi-line', 'review'],
-				readDate: '2021-06-15'
+				review: ['Multi-line', 'review']
 			},
 			other_site: {
 				tags: ['shared'],
@@ -86,6 +86,7 @@ describe('filterBySiteId', () => {
 		expect(entry).toHaveProperty('title');
 		expect(entry).toHaveProperty('author');
 		expect(entry).toHaveProperty('year');
+		expect(entry).toHaveProperty('readDate');
 		expect(entry).toHaveProperty('customInfo');
 	});
 

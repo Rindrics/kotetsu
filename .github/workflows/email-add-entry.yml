@@ -1,0 +1,152 @@
+name: Add Entry from Email
+
+on:
+  repository_dispatch:
+    types: [add-entry]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  add-entry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install -g pnpm@10 && pnpm install
+
+      - name: Configure git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Parse ISBN and find or generate citation key
+        id: lookup
+        env:
+          ISBN: ${{ github.event.client_payload.isbn }}
+          READDATE: ${{ github.event.client_payload.readDate }}
+        run: |
+          echo "ISBN: $ISBN"
+          echo "ReadDate: $READDATE"
+
+          # Use awk for robust BibTeX record-based parsing
+          CITATION_KEY=$(awk -v isbn="$ISBN" 'BEGIN{RS=""; FS="\n"} tolower($0) ~ tolower("isbn.*" isbn) {
+            for (i=1; i<=NF; i++) {
+              if ($i ~ /^@/) {
+                match($i, /{([^,]+)/, arr)
+                print arr[1]
+                exit
+              }
+            }
+          }' contents/references.bib 2>/dev/null || true)
+
+          # If not found, generate citation key from ISBN
+          if [ -z "$CITATION_KEY" ]; then
+            echo "No matching .bib entry found, generating citation key from ISBN"
+            CITATION_KEY="isbn-$ISBN"
+          fi
+
+          echo "citation_key=$CITATION_KEY" >> $GITHUB_OUTPUT
+          echo "Using citation key: $CITATION_KEY"
+
+      - name: Check if entry already exists in custom_info.yaml
+        id: check_duplicate
+        env:
+          CITATION_KEY: ${{ steps.lookup.outputs.citation_key }}
+        run: |
+          if awk -v k="$CITATION_KEY" -F: '$1==k{exit 0} END{exit 1}' contents/custom_info.yaml 2>/dev/null; then
+            echo "duplicate=true" >> $GITHUB_OUTPUT
+            echo "Entry $CITATION_KEY already exists in custom_info.yaml"
+          else
+            echo "duplicate=false" >> $GITHUB_OUTPUT
+            echo "Entry is new, proceeding..."
+          fi
+
+      - name: Create new YAML entry
+        if: steps.check_duplicate.outputs.duplicate == 'false'
+        env:
+          CITATION_KEY: ${{ steps.lookup.outputs.citation_key }}
+          READDATE: ${{ github.event.client_payload.readDate }}
+        run: |
+          # Validate readDate format (YYYY-MM-DD)
+          if ! [[ "$READDATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "Invalid readDate format: $READDATE"
+            exit 1
+          fi
+
+          # Append new entry to custom_info.yaml
+          cat >> contents/custom_info.yaml << EOF
+
+          "$CITATION_KEY":
+            readDate: '$READDATE'
+          EOF
+
+      - name: Entry already exists (skip)
+        if: steps.check_duplicate.outputs.duplicate == 'true'
+        run: |
+          echo "Skipping: Entry already exists in custom_info.yaml"
+
+      - name: Create feature branch and commit
+        if: steps.check_duplicate.outputs.duplicate == 'false'
+        env:
+          CITATION_KEY: ${{ steps.lookup.outputs.citation_key }}
+          READDATE: ${{ github.event.client_payload.readDate }}
+        run: |
+          # Sanitize CITATION_KEY for use in branch name
+          SAFE_KEY="${CITATION_KEY//[^A-Za-z0-9._-]/-}"
+
+          # Create and checkout new branch
+          git checkout -b "add-$SAFE_KEY"
+
+          # Stage and commit (use original CITATION_KEY for message)
+          git add contents/custom_info.yaml
+          git commit -m "feat: add $CITATION_KEY (read $READDATE)"
+
+          # Push branch
+          git push origin "add-$SAFE_KEY"
+
+      - name: Create Pull Request
+        if: steps.check_duplicate.outputs.duplicate == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CITATION_KEY: ${{ steps.lookup.outputs.citation_key }}
+          ISBN: ${{ github.event.client_payload.isbn }}
+          READDATE: ${{ github.event.client_payload.readDate }}
+        run: |
+          # Sanitize CITATION_KEY for use in branch name
+          SAFE_KEY="${CITATION_KEY//[^A-Za-z0-9._-]/-}"
+
+          BIB_STATUS="matching .bib entry found"
+
+          # Check if this is a generated ISBN-based key (no .bib match)
+          if [[ "$CITATION_KEY" == isbn-* ]]; then
+            BIB_STATUS="⚠️ No matching .bib entry - citation key auto-generated from ISBN. Please add to references.bib manually."
+          fi
+
+          gh pr create \
+            --title "Add $CITATION_KEY" \
+            --body "Added from email
+
+**ISBN**: \`$ISBN\`
+**Read date**: \`$READDATE\`
+**Status**: $BIB_STATUS
+
+Please review, add to references.bib if needed, and merge if correct." \
+            --head "add-$SAFE_KEY" \
+            --base "main"
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "Failed to process entry from email"
+          echo "ISBN: ${{ github.event.client_payload.isbn }}"
+          echo "ReadDate: ${{ github.event.client_payload.readDate }}"

@@ -22,7 +22,6 @@ export interface CustomInfoFull {
 	tags?: string[];
 	review?: string | string[];
 	memo?: string[];
-	readDate?: string; // ISO 8601 format (YYYY-MM-DD)
 }
 
 /**
@@ -32,7 +31,6 @@ export interface CustomInfoFull {
 export interface CustomInfoFrontend {
 	tags?: string[];
 	review?: string | string[];
-	readDate?: string; // ISO 8601 format (YYYY-MM-DD)
 }
 
 /**
@@ -46,17 +44,18 @@ export type CustomInfo = CustomInfoFrontend;
  * Supports multiple sites via customInfo[siteId]
  */
 export interface BibliographyItem extends BibEntry {
+	readDate?: string; // ISO 8601 format (YYYY-MM-DD)
 	customInfo?: {
 		[siteId: string]: CustomInfoFrontend;
 	};
 }
 
 /**
- * Raw YAML structure for custom_info.yaml
+ * Parsed entry info including readDate at entry level
+ * @internal Used internally during YAML parsing
  */
-export interface CustomInfoYaml {
-	[entryId: string]: {
-		[siteId: string]: CustomInfoFull;
-	};
+export interface ParsedEntryInfo {
+	readDate?: string;
+	sites: { [siteId: string]: CustomInfoFull };
 }
 

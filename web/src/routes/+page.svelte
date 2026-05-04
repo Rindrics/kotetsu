@@ -282,11 +282,15 @@
 
 								<!-- Review -->
 								{#if item.customInfo.review}
-									<blockquote
-										class="border-l-2 border-amber-500/50 pl-4 text-slate-300 leading-relaxed italic"
-									>
-										{item.customInfo.review}
-									</blockquote>
+									<div class="review text-slate-300 leading-relaxed">
+										{#if Array.isArray(item.customInfo.review)}
+											{#each item.customInfo.review as reviewItem}
+												<p class="mb-2">{reviewItem}</p>
+											{/each}
+										{:else}
+											<p>{item.customInfo.review}</p>
+										{/if}
+									</div>
 								{/if}
 							</div>
 						{/if}
