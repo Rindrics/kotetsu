@@ -86,6 +86,7 @@ describe('filterBySiteId', () => {
 		expect(entry).toHaveProperty('title');
 		expect(entry).toHaveProperty('author');
 		expect(entry).toHaveProperty('year');
+		expect(entry).toHaveProperty('readDate');
 		expect(entry).toHaveProperty('customInfo');
 	});
 

@@ -9,6 +9,35 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
+ * Validate readDate format (YYYY-MM-DD)
+ */
+function isValidReadDate(value: unknown): boolean {
+	if (typeof value !== 'string') {
+		return false;
+	}
+
+	const match = value.match(/^\d{4}-\d{2}-\d{2}$/);
+	if (!match) {
+		return false;
+	}
+
+	const [, , month, day] = match.map((s) => parseInt(s, 10));
+
+	// Validate month and day ranges
+	if (month < 1 || month > 12 || day < 1 || day > 31) {
+		return false;
+	}
+
+	// Validate with Date constructor for leap year and actual day validity
+	const date = new Date(`${value}T00:00:00Z`);
+	if (isNaN(date.getTime())) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
  * Validate CustomInfoFull fields
  */
 function validateCustomInfo(value: unknown): value is CustomInfoFull {
@@ -62,7 +91,9 @@ export function parseCustomInfo(content: string): Map<string, ParsedEntryInfo> {
 			continue;
 		}
 
-		const readDate = typeof entryValue.readDate === 'string' ? entryValue.readDate : undefined;
+		const readDate = isValidReadDate(entryValue.readDate)
+			? (entryValue.readDate as string)
+			: undefined;
 		const sites: { [siteId: string]: CustomInfoFull } = {};
 
 		for (const [key, value] of Object.entries(entryValue)) {

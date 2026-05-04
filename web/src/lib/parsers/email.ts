@@ -34,11 +34,27 @@ function isValidISBN10(isbn: string): boolean {
 }
 
 /**
- * Validate ISBN-13 format (starts with 978 or 979, 13 digits total)
+ * Validate ISBN-13 format and check digit
+ * Starts with 978 or 979, 13 digits total
+ * Check digit validation: weighted sum with alternating weights 1 and 3
  */
 function isValidISBN13(isbn: string): boolean {
 	const pattern = /^97[89]\d{10}$/;
-	return pattern.test(isbn);
+	if (!pattern.test(isbn)) {
+		return false;
+	}
+
+	// Validate check digit
+	let sum = 0;
+	for (let i = 0; i < 12; i++) {
+		const weight = i % 2 === 0 ? 1 : 3;
+		sum += parseInt(isbn[i], 10) * weight;
+	}
+
+	const checkDigit = parseInt(isbn[12], 10);
+	const expectedCheck = (10 - (sum % 10)) % 10;
+
+	return checkDigit === expectedCheck;
 }
 
 /**
