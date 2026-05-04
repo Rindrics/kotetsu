@@ -1,5 +1,5 @@
 import { parse } from 'yaml';
-import type { CustomInfoFull } from '../types';
+import type { CustomInfoFull, ParsedEntryInfo } from '../types';
 
 /**
  * Check if value is a plain object
@@ -33,20 +33,17 @@ function validateCustomInfo(value: unknown): value is CustomInfoFull {
 	const validMemo =
 		memo === undefined || (Array.isArray(memo) && memo.every((m) => typeof m === 'string'));
 
-	// Validate readDate (string or undefined)
-	const readDate = value.readDate;
-	const validReadDate = readDate === undefined || typeof readDate === 'string';
-
-	return validTags && validReview && validMemo && validReadDate;
+	return validTags && validReview && validMemo;
 }
 
 /**
- * Parse YAML content and return a map of entry ID to per-site CustomInfoFull
+ * Parse YAML content and return a map of entry ID to ParsedEntryInfo
+ * Extracts readDate at entry level and per-site CustomInfoFull
  * Returns empty Map on invalid inputs or parse errors
  * @internal Returns full info including memo (internal-only field)
  */
-export function parseCustomInfo(content: string): Map<string, { [siteId: string]: CustomInfoFull }> {
-	const result = new Map<string, { [siteId: string]: CustomInfoFull }>();
+export function parseCustomInfo(content: string): Map<string, ParsedEntryInfo> {
+	const result = new Map<string, ParsedEntryInfo>();
 
 	let parsed: unknown;
 	try {
@@ -60,21 +57,23 @@ export function parseCustomInfo(content: string): Map<string, { [siteId: string]
 		return result;
 	}
 
-	for (const [entryId, sites] of Object.entries(parsed)) {
-		if (!isPlainObject(sites)) {
+	for (const [entryId, entryValue] of Object.entries(parsed)) {
+		if (!isPlainObject(entryValue)) {
 			continue;
 		}
 
-		const siteMap: { [siteId: string]: CustomInfoFull } = {};
+		const readDate = typeof entryValue.readDate === 'string' ? entryValue.readDate : undefined;
+		const sites: { [siteId: string]: CustomInfoFull } = {};
 
-		for (const [siteId, siteInfo] of Object.entries(sites)) {
-			if (validateCustomInfo(siteInfo)) {
-				siteMap[siteId] = siteInfo;
+		for (const [key, value] of Object.entries(entryValue)) {
+			if (key === 'readDate') continue;
+			if (validateCustomInfo(value)) {
+				sites[key] = value;
 			}
 		}
 
-		if (Object.keys(siteMap).length > 0) {
-			result.set(entryId, siteMap);
+		if (Object.keys(sites).length > 0 || readDate !== undefined) {
+			result.set(entryId, { readDate, sites });
 		}
 	}
 

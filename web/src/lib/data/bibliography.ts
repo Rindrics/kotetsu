@@ -21,6 +21,7 @@ export const bibliographyData: BibliographyItem[] = [
     "publisher": "新潮社",
     "isbn": "9784103396512",
     "url": "https://books.google.co.jp/books?id=XX7dCwAAQBAJ",
+    "readDate": "2026-02-08",
     "customInfo": {
       "akirahayashi_com": {
         "tags": [
@@ -30,9 +31,8 @@ export const bibliographyData: BibliographyItem[] = [
         "review": [
           "進化電子工学の研究で、離れ小島的に残った論理ブロックの話が印象に残った。引用の文脈とは異なるが、現実世界には予め論理では想定しきれない複雑性がいくらでもあることがわかる。",
           "心を作ろうとしたチューリングと、心になって難問を解いた岡の対比に、西洋と東洋の感性の違いを思った。",
-          "「生成」というキーワードが、2026年に読むと改めて意識される。自分が作ったものを眺めると、それに対して改善したい点が見つかる。これも生成の一種だろう。この生成の循環は身体のおかげで回っている。　"
-        ],
-        "readDate": "2026-02-08"
+          "「生成」というキーワードが、2026年に読むと改めて意識される。自分が作ったものを眺めると、それに対して改善したい点が見つかる。これも生成の一種だろう。この生成の循環は身体のおかげで回っている。"
+        ]
       }
     }
   },
@@ -46,14 +46,14 @@ export const bibliographyData: BibliographyItem[] = [
     "series": "ちくま新書",
     "isbn": "9784480071248",
     "url": "https://books.google.co.jp/books?id=yibkswEACAAJ",
+    "readDate": "2026-01-15",
     "customInfo": {
       "akirahayashi_com": {
         "tags": [
           "ライブ",
           "体感覚"
         ],
-        "review": "日々の練習において体感覚を鍛錬し、本番では身体に任せた「発露」によって最高のパフォーマンスを生み出す",
-        "readDate": "2026-01-15"
+        "review": "日々の練習において体感覚を鍛錬し、本番では身体に任せた「発露」によって最高のパフォーマンスを生み出す"
       }
     }
   }

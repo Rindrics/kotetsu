@@ -23,10 +23,10 @@ import { filterBySiteId } from '$lib/api/filter';
  *   - type: BibTeX entry type (string, lowercase)
  *   - title, author, year: standard BibTeX fields
  *   - publisher?, series?, isbn?, url?: optional fields
+ *   - readDate?: ISO 8601 date string (entry-level)
  *   - customInfo?: metadata for the requested siteId
  *     - tags?: array of strings
  *     - review?: string or array of strings
- *     - readDate?: ISO 8601 date string
  *   Note: internal memo field is intentionally excluded for security
  *
  * Error Responses:

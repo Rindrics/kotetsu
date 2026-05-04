@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseCustomInfo } from '../src/lib/parsers/yaml';
-import type { BibEntry, BibliographyItem, CustomInfoFull, CustomInfoFrontend } from '../src/lib/types';
+import type { BibEntry, BibliographyItem, CustomInfoFull, CustomInfoFrontend, ParsedEntryInfo } from '../src/lib/types';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, '..', '..');
@@ -67,8 +67,7 @@ function parseFields(content: string): Record<string, string> {
 function toFrontendInfo(info: CustomInfoFull): CustomInfoFrontend | undefined {
 	const frontendInfo: CustomInfoFrontend = {
 		tags: info.tags,
-		review: info.review,
-		readDate: info.readDate
+		review: info.review
 	};
 
 	// Only include customInfo if at least one field is present
@@ -79,22 +78,22 @@ function toFrontendInfo(info: CustomInfoFull): CustomInfoFrontend | undefined {
 /**
  * Merge entries with custom info
  * Converts internal CustomInfoFull to frontend-safe CustomInfoFrontend
- * Supports multiple sites via customInfo[siteId]
+ * Extracts readDate to entry level and supports multiple sites via customInfo[siteId]
  */
 function mergeBibliography(
 	entries: BibEntry[],
-	customInfoByEntry: Map<string, { [siteId: string]: CustomInfoFull }>
+	customInfoByEntry: Map<string, ParsedEntryInfo>
 ): BibliographyItem[] {
 	return entries.map((entry) => {
-		const siteInfoMap = customInfoByEntry.get(entry.id);
+		const entryInfo = customInfoByEntry.get(entry.id);
 
-		if (!siteInfoMap || Object.keys(siteInfoMap).length === 0) {
+		if (!entryInfo) {
 			return { ...entry };
 		}
 
 		// Convert per-site CustomInfoFull to frontend-safe CustomInfoFrontend
 		const customInfo: { [siteId: string]: CustomInfoFrontend } = {};
-		for (const [siteId, info] of Object.entries(siteInfoMap)) {
+		for (const [siteId, info] of Object.entries(entryInfo.sites)) {
 			const frontendInfo = toFrontendInfo(info);
 			if (frontendInfo) {
 				customInfo[siteId] = frontendInfo;
@@ -103,6 +102,7 @@ function mergeBibliography(
 
 		return {
 			...entry,
+			readDate: entryInfo.readDate,
 			customInfo: Object.keys(customInfo).length > 0 ? customInfo : undefined
 		};
 	});
