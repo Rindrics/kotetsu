@@ -57,6 +57,7 @@ jobs:
         run: |
           pulumi stack select prd
           pulumi config set cloudflareAccountId ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} --non-interactive
+          pulumi config set kotetsu:sesReceiverEmail ${{ secrets.SES_RECEIVER_EMAIL }} --non-interactive
           pulumi config set kotetsu:allowedEmailAddresses ${{ vars.ALLOWED_EMAIL_ADDRESSES }} --non-interactive
           pulumi config set --secret kotetsu:githubDispatchToken ${{ secrets.GITHUB_TOKEN }} --non-interactive
 
@@ -109,6 +110,7 @@ jobs:
         run: |
           pulumi stack select prd
           pulumi config set cloudflareAccountId ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} --non-interactive
+          pulumi config set kotetsu:sesReceiverEmail ${{ secrets.SES_RECEIVER_EMAIL }} --non-interactive
           pulumi config set kotetsu:allowedEmailAddresses ${{ vars.ALLOWED_EMAIL_ADDRESSES }} --non-interactive
           pulumi config set --secret kotetsu:githubDispatchToken ${{ secrets.GITHUB_TOKEN }} --non-interactive
 
