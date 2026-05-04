@@ -88,9 +88,6 @@ jobs:
 
           "$CITATION_KEY":
             readDate: '$READDATE'
-            akirahayashi_com:
-              tags: []
-              review: ''
           EOF
 
       - name: Entry already exists (skip)
