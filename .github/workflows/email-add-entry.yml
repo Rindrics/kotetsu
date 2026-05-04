@@ -31,15 +31,23 @@ jobs:
 
       - name: Parse ISBN and find or generate citation key
         id: lookup
+        env:
+          ISBN: ${{ github.event.client_payload.isbn }}
+          READDATE: ${{ github.event.client_payload.readDate }}
         run: |
-          ISBN="${{ github.event.client_payload.isbn }}"
-          READDATE="${{ github.event.client_payload.readDate }}"
-
           echo "ISBN: $ISBN"
           echo "ReadDate: $READDATE"
 
-          # Try to find citation key by ISBN in references.bib
-          CITATION_KEY=$(grep -B 5 "isbn.*$ISBN" contents/references.bib 2>/dev/null | grep "^@" | tail -1 | grep -oP '(?<=\{)[^,]+' | head -1 || true)
+          # Use awk for robust BibTeX record-based parsing
+          CITATION_KEY=$(awk -v isbn="$ISBN" 'BEGIN{RS=""; FS="\n"} tolower($0) ~ tolower("isbn.*" isbn) {
+            for (i=1; i<=NF; i++) {
+              if ($i ~ /^@/) {
+                match($i, /{([^,]+)/, arr)
+                print arr[1]
+                exit
+              }
+            }
+          }' contents/references.bib 2>/dev/null || true)
 
           # If not found, generate citation key from ISBN
           if [ -z "$CITATION_KEY" ]; then
@@ -52,10 +60,10 @@ jobs:
 
       - name: Check if entry already exists in custom_info.yaml
         id: check_duplicate
+        env:
+          CITATION_KEY: ${{ steps.lookup.outputs.citation_key }}
         run: |
-          CITATION_KEY="${{ steps.lookup.outputs.citation_key }}"
-
-          if grep -q "^$CITATION_KEY:" contents/custom_info.yaml 2>/dev/null; then
+          if awk -v k="$CITATION_KEY" -F: '$1==k{exit 0} END{exit 1}' contents/custom_info.yaml 2>/dev/null; then
             echo "duplicate=true" >> $GITHUB_OUTPUT
             echo "Entry $CITATION_KEY already exists in custom_info.yaml"
           else
@@ -65,19 +73,25 @@ jobs:
 
       - name: Create new YAML entry
         if: steps.check_duplicate.outputs.duplicate == 'false'
+        env:
+          CITATION_KEY: ${{ steps.lookup.outputs.citation_key }}
+          READDATE: ${{ github.event.client_payload.readDate }}
         run: |
-          CITATION_KEY="${{ steps.lookup.outputs.citation_key }}"
-          READDATE="${{ github.event.client_payload.readDate }}"
+          # Validate readDate format (YYYY-MM-DD)
+          if ! [[ "$READDATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "Invalid readDate format: $READDATE"
+            exit 1
+          fi
 
           # Append new entry to custom_info.yaml
-          cat >> contents/custom_info.yaml << 'EOF'
+          cat >> contents/custom_info.yaml << EOF
 
-${{ steps.lookup.outputs.citation_key }}:
-  readDate: '${{ github.event.client_payload.readDate }}'
-  akirahayashi_com:
-    tags: []
-    review: ''
-EOF
+          "$CITATION_KEY":
+            readDate: '$READDATE'
+            akirahayashi_com:
+              tags: []
+              review: ''
+          EOF
 
       - name: Entry already exists (skip)
         if: steps.check_duplicate.outputs.duplicate == 'true'
@@ -86,28 +100,34 @@ EOF
 
       - name: Create feature branch and commit
         if: steps.check_duplicate.outputs.duplicate == 'false'
+        env:
+          CITATION_KEY: ${{ steps.lookup.outputs.citation_key }}
+          READDATE: ${{ github.event.client_payload.readDate }}
         run: |
-          CITATION_KEY="${{ steps.lookup.outputs.citation_key }}"
-          READDATE="${{ github.event.client_payload.readDate }}"
+          # Sanitize CITATION_KEY for use in branch name
+          SAFE_KEY="${CITATION_KEY//[^A-Za-z0-9._-]/-}"
 
           # Create and checkout new branch
-          git checkout -b "add-$CITATION_KEY"
+          git checkout -b "add-$SAFE_KEY"
 
-          # Stage and commit
+          # Stage and commit (use original CITATION_KEY for message)
           git add contents/custom_info.yaml
           git commit -m "feat: add $CITATION_KEY (read $READDATE)"
 
           # Push branch
-          git push origin "add-$CITATION_KEY"
+          git push origin "add-$SAFE_KEY"
 
       - name: Create Pull Request
         if: steps.check_duplicate.outputs.duplicate == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CITATION_KEY: ${{ steps.lookup.outputs.citation_key }}
+          ISBN: ${{ github.event.client_payload.isbn }}
+          READDATE: ${{ github.event.client_payload.readDate }}
         run: |
-          CITATION_KEY="${{ steps.lookup.outputs.citation_key }}"
-          ISBN="${{ github.event.client_payload.isbn }}"
-          READDATE="${{ github.event.client_payload.readDate }}"
+          # Sanitize CITATION_KEY for use in branch name
+          SAFE_KEY="${CITATION_KEY//[^A-Za-z0-9._-]/-}"
+
           BIB_STATUS="matching .bib entry found"
 
           # Check if this is a generated ISBN-based key (no .bib match)
@@ -124,7 +144,7 @@ EOF
 **Status**: $BIB_STATUS
 
 Please review, add to references.bib if needed, and merge if correct." \
-            --head "add-$CITATION_KEY" \
+            --head "add-$SAFE_KEY" \
             --base "main"
 
       - name: Report failure
