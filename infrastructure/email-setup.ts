@@ -3,17 +3,17 @@ import * as aws from '@pulumi/aws';
 
 const config = new pulumi.Config('kotetsu');
 
-// Get configuration from Pulumi config
-// allowedEmailAddresses: set via Pulumi config or GitHub Secrets in CI/CD
-// githubDispatchToken: set via Pulumi config or GitHub Secrets in CI/CD
-// sesReceiverEmail: optional, defaults to add@kotetsu.rindrics.com
-const sesReceiverEmail = config.get('sesReceiverEmail') || 'add@kotetsu.rindrics.com';
+// Get configuration from Pulumi config (all required)
+const sesReceiverEmail = config.require('sesReceiverEmail');
 const githubDispatchToken = config.requireSecret('githubDispatchToken');
 const allowedEmailAddresses = config.require('allowedEmailAddresses');
 
 // 1. Create SNS Topic for SES
 const sesEmailTopic = new aws.sns.Topic('ses-email-topic', {
-	displayName: 'SES Email Receiver Topic'
+	displayName: 'SES Email Receiver Topic',
+	tags: {
+		projectName: 'kotetsu'
+	}
 });
 
 // 2. Create Lambda execution role
@@ -29,7 +29,10 @@ const lambdaRole = new aws.iam.Role('email-parser-lambda-role', {
 				}
 			}
 		]
-	})
+	}),
+	tags: {
+		projectName: 'kotetsu'
+	}
 });
 
 // Attach basic Lambda execution policy
@@ -41,8 +44,8 @@ new aws.iam.RolePolicyAttachment('lambda-basic-execution', {
 // 3. Create Lambda Function
 // Lambda code is in infrastructure/lambda directory
 // Pulumi will automatically package it
-const emailParserLambda = new aws.lambda.Function('email-parser', {
-	runtime: 'nodejs18.x',
+const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
+	runtime: 'nodejs22.x',
 	role: lambdaRole.arn,
 	handler: 'index.handler',
 	code: new pulumi.asset.FileArchive('./lambda'),
@@ -53,7 +56,10 @@ const emailParserLambda = new aws.lambda.Function('email-parser', {
 		}
 	},
 	timeout: 30,
-	memorySize: 256
+	memorySize: 256,
+	tags: {
+		projectName: 'kotetsu'
+	}
 });
 
 // 4. Subscribe Lambda to SNS Topic

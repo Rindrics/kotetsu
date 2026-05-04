@@ -3,24 +3,24 @@ import { isAllowedSender, handleEmailMessage, verifyEmailAuthentication } from '
 
 describe('isAllowedSender', () => {
 	it('should allow matching sender', () => {
-		const allowed = 'akira.hayashi.1987@gmail.com,rindrics@gmail.com';
-		expect(isAllowedSender('akira.hayashi.1987@gmail.com', allowed)).toBe(true);
-		expect(isAllowedSender('rindrics@gmail.com', allowed)).toBe(true);
+		const allowed = 'alice@example.com,bob@example.com';
+		expect(isAllowedSender('alice@example.com', allowed)).toBe(true);
+		expect(isAllowedSender('bob@example.com', allowed)).toBe(true);
 	});
 
 	it('should reject non-matching sender', () => {
-		const allowed = 'akira.hayashi.1987@gmail.com,rindrics@gmail.com';
+		const allowed = 'alice@example.com,bob@example.com';
 		expect(isAllowedSender('attacker@example.com', allowed)).toBe(false);
 	});
 
 	it('should handle whitespace in allowed list', () => {
-		const allowed = ' akira.hayashi.1987@gmail.com , rindrics@gmail.com ';
-		expect(isAllowedSender('akira.hayashi.1987@gmail.com', allowed)).toBe(true);
+		const allowed = ' alice@example.com , bob@example.com ';
+		expect(isAllowedSender('alice@example.com', allowed)).toBe(true);
 	});
 
 	it('should handle empty allowed list', () => {
 		const allowed = '';
-		expect(isAllowedSender('akira.hayashi.1987@gmail.com', allowed)).toBe(false);
+		expect(isAllowedSender('alice@example.com', allowed)).toBe(false);
 	});
 });
 
@@ -123,7 +123,7 @@ describe('verifyEmailAuthentication', () => {
 describe('handleEmailMessage', () => {
 	const mockMessage = {
 		mail: {
-			source: 'akira.hayashi.1987@gmail.com',
+			source: 'alice@example.com',
 			messageId: 'test-message-id',
 			timestamp: new Date().toISOString(),
 			authentication: {
@@ -135,7 +135,7 @@ describe('handleEmailMessage', () => {
 		content: '9784103396512\n2026-05-04'
 	};
 
-	const allowedAddresses = 'akira.hayashi.1987@gmail.com,rindrics@gmail.com';
+	const allowedAddresses = 'alice@example.com,bob@example.com';
 	const mockGithubToken = 'ghp_test_token';
 
 	it('should reject email with failed authentication', async () => {
