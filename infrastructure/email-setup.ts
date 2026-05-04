@@ -41,6 +41,25 @@ new aws.iam.RolePolicyAttachment('lambda-basic-execution', {
 	policyArn: aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole
 });
 
+// Attach inline policy for CloudWatch Logs creation
+new aws.iam.RolePolicy('lambda-logs-policy', {
+	role: lambdaRole.id,
+	policy: JSON.stringify({
+		Version: '2012-10-17',
+		Statement: [
+			{
+				Effect: 'Allow',
+				Action: [
+					'logs:CreateLogGroup',
+					'logs:CreateLogStream',
+					'logs:PutLogEvents'
+				],
+				Resource: 'arn:aws:logs:*:*:*'
+			}
+		]
+	})
+});
+
 // 3. Create Lambda Function
 // Lambda code is in infrastructure/lambda directory
 // Pulumi will automatically package it
