@@ -10,7 +10,10 @@ const allowedEmailAddresses = config.require('allowedEmailAddresses');
 
 // 1. Create SNS Topic for SES
 const sesEmailTopic = new aws.sns.Topic('ses-email-topic', {
-	displayName: 'SES Email Receiver Topic'
+	displayName: 'SES Email Receiver Topic',
+	tags: {
+		projectName: 'kotetsu'
+	}
 });
 
 // 2. Create Lambda execution role
@@ -26,7 +29,10 @@ const lambdaRole = new aws.iam.Role('email-parser-lambda-role', {
 				}
 			}
 		]
-	})
+	}),
+	tags: {
+		projectName: 'kotetsu'
+	}
 });
 
 // Attach basic Lambda execution policy
@@ -50,7 +56,10 @@ const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
 		}
 	},
 	timeout: 30,
-	memorySize: 256
+	memorySize: 256,
+	tags: {
+		projectName: 'kotetsu'
+	}
 });
 
 // 4. Subscribe Lambda to SNS Topic
