@@ -3,11 +3,8 @@ import * as aws from '@pulumi/aws';
 
 const config = new pulumi.Config('kotetsu');
 
-// Get configuration from Pulumi config
-// allowedEmailAddresses: set via Pulumi config or GitHub Secrets in CI/CD
-// githubDispatchToken: set via Pulumi config or GitHub Secrets in CI/CD
-// sesReceiverEmail: optional, defaults to add@kotetsu.rindrics.com
-const sesReceiverEmail = config.get('sesReceiverEmail') || 'add@kotetsu.rindrics.com';
+// Get configuration from Pulumi config (all required)
+const sesReceiverEmail = config.require('sesReceiverEmail');
 const githubDispatchToken = config.requireSecret('githubDispatchToken');
 const allowedEmailAddresses = config.require('allowedEmailAddresses');
 

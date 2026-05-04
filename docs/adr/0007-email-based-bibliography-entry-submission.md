@@ -79,22 +79,30 @@ GitHub Actions Workflow (email-add-entry)
   - Env vars: `ALLOWED_EMAIL_ADDRESSES`, `GITHUB_DISPATCH_TOKEN`
   - Timeout: 5 seconds (GitHub API call timeout)
 - **SES Receipt Rule**: Routes emails to SNS topic
-  - Recipient: `add@kotetsu.rindrics.com` (configurable via `sesReceiverEmail` Pulumi config)
-  - Default: `add@kotetsu.rindrics.com`
+  - Recipient: Configurable via `sesReceiverEmail` Pulumi config (required, no default)
 
 **Configuration** (`infrastructure/email-setup.ts`):
 
+All configuration values are **required** (no defaults):
+
 ```typescript
-const sesReceiverEmail = config.get('sesReceiverEmail') || 'add@kotetsu.rindrics.com';
+const sesReceiverEmail = config.require('sesReceiverEmail');
 const allowedEmailAddresses = config.require('allowedEmailAddresses');  // CSV format
 const githubDispatchToken = config.requireSecret('githubDispatchToken');
 ```
 
-Override via:
+Set via:
 ```bash
-pulumi config set kotetsu:sesReceiverEmail "custom@example.com"
+pulumi config set kotetsu:sesReceiverEmail "add@kotetsu.rindrics.com"
 pulumi config set kotetsu:allowedEmailAddresses "alice@example.com,bob@example.com"
 pulumi config set --secret kotetsu:githubDispatchToken "ghp_xxxx"
+```
+
+Or via GitHub Secrets (in CI/CD workflow):
+```bash
+pulumi config set kotetsu:sesReceiverEmail ${{ secrets.SES_RECEIVER_EMAIL }}
+pulumi config set kotetsu:allowedEmailAddresses ${{ vars.ALLOWED_EMAIL_ADDRESSES }}
+pulumi config set --secret kotetsu:githubDispatchToken ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Workflow (GitHub Actions)
