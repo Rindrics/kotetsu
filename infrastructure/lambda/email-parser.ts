@@ -9,6 +9,11 @@ export interface SESMessage {
 		source: string;
 		messageId: string;
 		timestamp: string;
+		authentication?: {
+			spf?: string[];
+			dkim?: string[];
+			dmarc?: string[];
+		};
 	};
 	content: string;
 }
@@ -23,6 +28,46 @@ export function isAllowedSender(sender: string, allowedAddresses: string): boole
 		.filter((addr) => addr.length > 0);
 
 	return allowed.includes(sender);
+}
+
+/**
+ * Verify SPF, DKIM, and DMARC authentication
+ * All three must pass for the email to be accepted
+ */
+export function verifyEmailAuthentication(sesMessage: SESMessage): { valid: boolean; reason?: string } {
+	const auth = sesMessage.mail.authentication;
+
+	if (!auth) {
+		return {
+			valid: false,
+			reason: 'No authentication data found in SES message'
+		};
+	}
+
+	if (!auth.spf || auth.spf.length === 0 || auth.spf[0] !== 'Pass') {
+		return {
+			valid: false,
+			reason: `SPF check failed: ${auth.spf?.[0] || 'missing'}`
+		};
+	}
+
+	if (!auth.dkim || auth.dkim.length === 0 || auth.dkim[0] !== 'Pass') {
+		return {
+			valid: false,
+			reason: `DKIM check failed: ${auth.dkim?.[0] || 'missing'}`
+		};
+	}
+
+	if (!auth.dmarc || auth.dmarc.length === 0 || auth.dmarc[0] !== 'Pass') {
+		return {
+			valid: false,
+			reason: `DMARC check failed: ${auth.dmarc?.[0] || 'missing'}`
+		};
+	}
+
+	return {
+		valid: true
+	};
 }
 
 /**
@@ -80,7 +125,19 @@ export async function handleEmailMessage(
 
 	console.log(`Processing email from ${sender} (Message ID: ${messageId})`);
 
-	// 1. Check sender
+	// 1. Verify SPF/DKIM/DMARC authentication
+	const authCheck = verifyEmailAuthentication(sesMessage);
+	if (!authCheck.valid) {
+		console.warn(`Email from ${sender} rejected: authentication failed - ${authCheck.reason}`);
+		return {
+			success: false,
+			message: `Authentication failed: ${authCheck.reason}`
+		};
+	}
+
+	console.log(`Email authentication passed (SPF, DKIM, DMARC)`);
+
+	// 2. Check sender whitelist
 	if (!isAllowedSender(sender, allowedAddresses)) {
 		console.warn(`Email from ${sender} rejected: not in allowed sender list`);
 		return {
@@ -91,7 +148,7 @@ export async function handleEmailMessage(
 
 	console.log(`Sender ${sender} is allowed`);
 
-	// 2. Parse email
+	// 3. Parse email
 	const parsed = parseEmailBody(emailBody);
 	if (!parsed) {
 		console.warn(`Failed to parse email body from ${sender}`);
@@ -103,7 +160,7 @@ export async function handleEmailMessage(
 
 	console.log(`Parsed email: ISBN=${parsed.isbn}, ReadDate=${parsed.readDate}`);
 
-	// 3. Trigger GitHub workflow
+	// 4. Trigger GitHub workflow
 	const dispatchSuccess = await triggerGitHubDispatch(parsed.isbn, parsed.readDate, githubToken);
 	if (!dispatchSuccess) {
 		return {

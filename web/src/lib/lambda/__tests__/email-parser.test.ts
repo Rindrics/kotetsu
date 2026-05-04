@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isAllowedSender, handleEmailMessage } from '../email-parser';
+import { isAllowedSender, handleEmailMessage, verifyEmailAuthentication } from '../email-parser';
 
 describe('isAllowedSender', () => {
 	it('should allow matching sender', () => {
@@ -24,18 +24,137 @@ describe('isAllowedSender', () => {
 	});
 });
 
+describe('verifyEmailAuthentication', () => {
+	it('should accept email with all authentication passed', () => {
+		const message = {
+			mail: {
+				source: 'test@example.com',
+				messageId: 'id',
+				timestamp: new Date().toISOString(),
+				authentication: {
+					spf: ['Pass'],
+					dkim: ['Pass'],
+					dmarc: ['Pass']
+				}
+			},
+			content: ''
+		};
+
+		const result = verifyEmailAuthentication(message);
+		expect(result.valid).toBe(true);
+	});
+
+	it('should reject email with SPF failure', () => {
+		const message = {
+			mail: {
+				source: 'test@example.com',
+				messageId: 'id',
+				timestamp: new Date().toISOString(),
+				authentication: {
+					spf: ['Fail'],
+					dkim: ['Pass'],
+					dmarc: ['Pass']
+				}
+			},
+			content: ''
+		};
+
+		const result = verifyEmailAuthentication(message);
+		expect(result.valid).toBe(false);
+		expect(result.reason).toContain('SPF');
+	});
+
+	it('should reject email with DKIM failure', () => {
+		const message = {
+			mail: {
+				source: 'test@example.com',
+				messageId: 'id',
+				timestamp: new Date().toISOString(),
+				authentication: {
+					spf: ['Pass'],
+					dkim: ['Fail'],
+					dmarc: ['Pass']
+				}
+			},
+			content: ''
+		};
+
+		const result = verifyEmailAuthentication(message);
+		expect(result.valid).toBe(false);
+		expect(result.reason).toContain('DKIM');
+	});
+
+	it('should reject email with DMARC failure', () => {
+		const message = {
+			mail: {
+				source: 'test@example.com',
+				messageId: 'id',
+				timestamp: new Date().toISOString(),
+				authentication: {
+					spf: ['Pass'],
+					dkim: ['Pass'],
+					dmarc: ['Fail']
+				}
+			},
+			content: ''
+		};
+
+		const result = verifyEmailAuthentication(message);
+		expect(result.valid).toBe(false);
+		expect(result.reason).toContain('DMARC');
+	});
+
+	it('should reject email with missing authentication data', () => {
+		const message = {
+			mail: {
+				source: 'test@example.com',
+				messageId: 'id',
+				timestamp: new Date().toISOString()
+			},
+			content: ''
+		};
+
+		const result = verifyEmailAuthentication(message);
+		expect(result.valid).toBe(false);
+		expect(result.reason).toContain('No authentication data');
+	});
+});
+
 describe('handleEmailMessage', () => {
 	const mockMessage = {
 		mail: {
 			source: 'akira.hayashi.1987@gmail.com',
 			messageId: 'test-message-id',
-			timestamp: new Date().toISOString()
+			timestamp: new Date().toISOString(),
+			authentication: {
+				spf: ['Pass'],
+				dkim: ['Pass'],
+				dmarc: ['Pass']
+			}
 		},
 		content: '9784103396512\n2026-05-04'
 	};
 
 	const allowedAddresses = 'akira.hayashi.1987@gmail.com,rindrics@gmail.com';
 	const mockGithubToken = 'ghp_test_token';
+
+	it('should reject email with failed authentication', async () => {
+		const unauthenticatedMessage = {
+			...mockMessage,
+			mail: {
+				...mockMessage.mail,
+				authentication: {
+					spf: ['Fail'],
+					dkim: ['Pass'],
+					dmarc: ['Pass']
+				}
+			}
+		};
+
+		const result = await handleEmailMessage(unauthenticatedMessage, allowedAddresses, mockGithubToken);
+		expect(result.success).toBe(false);
+		expect(result.message).toContain('Authentication failed');
+	});
 
 	it('should reject unauthorized sender', async () => {
 		const unauthorizedMessage = {
