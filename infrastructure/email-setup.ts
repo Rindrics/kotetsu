@@ -38,8 +38,8 @@ new aws.iam.RolePolicyAttachment('lambda-basic-execution', {
 // 3. Create Lambda Function
 // Lambda code is in infrastructure/lambda directory
 // Pulumi will automatically package it
-const emailParserLambda = new aws.lambda.Function('email-parser', {
-	runtime: 'nodejs18.x',
+const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
+	runtime: 'nodejs22.x',
 	role: lambdaRole.arn,
 	handler: 'index.handler',
 	code: new pulumi.asset.FileArchive('./lambda'),
