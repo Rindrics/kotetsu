@@ -13,7 +13,7 @@ const GITHUB_TOKEN = process.env.GITHUB_DISPATCH_TOKEN || '';
 
 /**
  * Parse SNS message containing SES receipt notification
- * SNS message body contains the raw email or SES receipt metadata
+ * Extracts mail metadata, content, and email authentication verdicts
  */
 function parseSNSMessage(snsMessage: string): SESMessage | null {
 	try {
@@ -22,11 +22,36 @@ function parseSNSMessage(snsMessage: string): SESMessage | null {
 
 		// Extract mail metadata and content
 		if (parsed.mail && parsed.mail.source) {
+			const authentication = {
+				spf: undefined as string[] | undefined,
+				dkim: undefined as string[] | undefined,
+				dmarc: undefined as string[] | undefined
+			};
+
+			// Extract and normalize authentication verdicts from SES receipt
+			if (parsed.receipt) {
+				const receipt = parsed.receipt;
+
+				// Convert AWS uppercase statuses (e.g., "PASS", "FAIL") to title case
+				if (receipt.spfVerdict?.status) {
+					authentication.spf = [toTitleCase(receipt.spfVerdict.status)];
+				}
+				if (receipt.dkimVerdict?.status) {
+					authentication.dkim = [toTitleCase(receipt.dkimVerdict.status)];
+				}
+				if (receipt.dmarcVerdict?.status) {
+					authentication.dmarc = [toTitleCase(receipt.dmarcVerdict.status)];
+				}
+			}
+
 			return {
 				mail: {
 					source: parsed.mail.source,
 					messageId: parsed.mail.messageId || 'unknown',
-					timestamp: parsed.mail.timestamp || new Date().toISOString()
+					timestamp: parsed.mail.timestamp || new Date().toISOString(),
+					authentication: Object.values(authentication).some((v) => v)
+						? (authentication as unknown as NonNullable<SESMessage['mail']['authentication']>)
+						: undefined
 				},
 				content: parsed.content || ''
 			};
@@ -38,6 +63,13 @@ function parseSNSMessage(snsMessage: string): SESMessage | null {
 		console.error('Failed to parse SNS message:', error);
 		return null;
 	}
+}
+
+/**
+ * Convert string to title case (first letter uppercase, rest lowercase)
+ */
+function toTitleCase(str: string): string {
+	return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
 /**

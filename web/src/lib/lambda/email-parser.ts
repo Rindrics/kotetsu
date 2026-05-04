@@ -108,6 +108,9 @@ export async function triggerGitHubDispatch(
 		}
 	};
 
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), 5000);
+
 	try {
 		const response = await fetch('https://api.github.com/repos/Rindrics/kotetsu/dispatches', {
 			method: 'POST',
@@ -116,7 +119,8 @@ export async function triggerGitHubDispatch(
 				'Authorization': `token ${githubToken}`,
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify(dispatchPayload)
+			body: JSON.stringify(dispatchPayload),
+			signal: controller.signal
 		});
 
 		if (!response.ok) {
@@ -128,9 +132,24 @@ export async function triggerGitHubDispatch(
 		console.log(`Successfully triggered GitHub workflow for ISBN ${isbn}`);
 		return true;
 	} catch (error) {
+		if (error instanceof Error && error.name === 'AbortError') {
+			console.error('GitHub dispatch request timeout');
+			return false;
+		}
 		console.error('Failed to trigger GitHub dispatch:', error);
 		return false;
+	} finally {
+		clearTimeout(timeoutId);
 	}
+}
+
+/**
+ * Mask PII sender email for logging
+ */
+function maskSenderEmail(sender: string): string {
+	const parts = sender.split('@');
+	if (parts.length !== 2) return '***';
+	return `***@${parts[1]}`;
 }
 
 /**
@@ -144,13 +163,14 @@ export async function handleEmailMessage(
 	const sender = sesMessage.mail.source;
 	const emailBody = sesMessage.content;
 	const messageId = sesMessage.mail.messageId;
+	const maskedSender = maskSenderEmail(sender);
 
-	console.log(`Processing email from ${sender} (Message ID: ${messageId})`);
+	console.log(`Processing email from ${maskedSender} (Message ID: ${messageId})`);
 
 	// 1. Verify SPF/DKIM/DMARC authentication
 	const authCheck = verifyEmailAuthentication(sesMessage);
 	if (!authCheck.valid) {
-		console.warn(`Email from ${sender} rejected: authentication failed - ${authCheck.reason}`);
+		console.warn(`Email from ${maskedSender} rejected: authentication failed - ${authCheck.reason}`);
 		return {
 			success: false,
 			message: `Authentication failed: ${authCheck.reason}`
@@ -161,19 +181,19 @@ export async function handleEmailMessage(
 
 	// 2. Check sender whitelist
 	if (!isAllowedSender(sender, allowedAddresses)) {
-		console.warn(`Email from ${sender} rejected: not in allowed sender list`);
+		console.warn(`Email from ${maskedSender} rejected: not in allowed sender list`);
 		return {
 			success: false,
-			message: `Sender ${sender} is not in allowed list`
+			message: `Sender is not in allowed list`
 		};
 	}
 
-	console.log(`Sender ${sender} is allowed`);
+	console.log(`Sender ${maskedSender} is allowed`);
 
 	// 3. Parse email
 	const parsed = parseEmailBody(emailBody);
 	if (!parsed) {
-		console.warn(`Failed to parse email body from ${sender}`);
+		console.warn(`Failed to parse email body from ${maskedSender}`);
 		return {
 			success: false,
 			message: 'Invalid email format. Expected: ISBN on line 1, date (yyyy-mm-dd or yyyy/mm/dd) on line 2'
