@@ -7,6 +7,7 @@ const config = new pulumi.Config('kotetsu');
 const sesReceiverEmail = config.require('sesReceiverEmail');
 const githubDispatchToken = config.requireSecret('githubDispatchToken');
 const allowedEmailAddresses = config.require('allowedEmailAddresses');
+const sentryDsn = config.requireSecret('sentryDsn');
 
 // 1. Create SNS Topic for SES
 const sesEmailTopic = new aws.sns.Topic('ses-email-topic', {
@@ -73,7 +74,9 @@ const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
 	environment: {
 		variables: {
 			ALLOWED_EMAIL_ADDRESSES: allowedEmailAddresses,
-			GITHUB_DISPATCH_TOKEN: githubDispatchToken
+			GITHUB_DISPATCH_TOKEN: githubDispatchToken,
+			NODE_OPTIONS: '--import @sentry/aws-serverless/awslambda-auto',
+			SENTRY_DSN: sentryDsn
 		}
 	},
 	timeout: 30,
