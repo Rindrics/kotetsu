@@ -7,7 +7,6 @@ const config = new pulumi.Config('kotetsu');
 const sesReceiverEmail = config.require('sesReceiverEmail');
 const githubDispatchToken = config.requireSecret('githubDispatchToken');
 const allowedEmailAddresses = config.require('allowedEmailAddresses');
-const route53ZoneId = config.require('route53ZoneId');
 
 // 1. Create SNS Topic for SES
 const sesEmailTopic = new aws.sns.Topic('ses-email-topic', {
@@ -97,21 +96,10 @@ new aws.lambda.Permission('allow-sns-invoke', {
 	sourceArn: sesEmailTopic.arn
 });
 
-// 6. Create Route53 MX record for kotetsu.rindrics.com
-new aws.route53.Record('kotetsu-mx-record', {
-	zoneId: route53ZoneId,
-	name: 'kotetsu.rindrics.com',
-	type: 'MX',
-	ttl: 300,
-	records: ['10 inbound-smtp.us-east-1.amazonaws.com'],
-	allowOverwrite: true,
-});
-
-// 7. Add rule to existing "slackmail" SES Receipt Rule Set
-// kotetsu.rindrics.com emails are forwarded to SNS for Lambda processing
-new aws.ses.ReceiptRule('kotetsu-email-to-sns', {
+// 6. Add rule to existing "slackmail" SES Receipt Rule Set
+new aws.ses.ReceiptRule('add-book-email-to-sns', {
 	ruleSetName: 'main',
-	name: 'kotetsu-email-to-sns',
+	name: 'add-book-email-to-sns',
 	enabled: true,
 	scanEnabled: true,
 	recipients: [sesReceiverEmail],
@@ -123,7 +111,7 @@ new aws.ses.ReceiptRule('kotetsu-email-to-sns', {
 	]
 });
 
-// 8. Export outputs
+// 7. Export outputs
 export const topicArn = sesEmailTopic.arn;
 export const lambdaFunctionName = emailParserLambda.name;
 export const lambdaFunctionArn = emailParserLambda.arn;
