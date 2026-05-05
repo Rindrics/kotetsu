@@ -2,7 +2,7 @@
 *.blg
 
 # TypeScript compiled output
-infrastructure/**/*.js
-infrastructure/**/*.js.map
+**/*.js
+**/*.js.map
 infrastructure/bin/
 infrastructure/node_modules/
