@@ -12,7 +12,7 @@ importers:
         specifier: ^6.56.0
         version: 6.83.3(typescript@5.9.3)
       '@pulumi/cloudflare':
-        specifier: ^6.12.0
+        specifier: ^6.15.0
         version: 6.15.0(typescript@5.9.3)
       '@pulumi/pulumi':
         specifier: ^3.214.1

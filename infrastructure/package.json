@@ -15,7 +15,7 @@
   "packageManager": "pnpm@10.26.2",
   "devDependencies": {
     "@pulumi/aws": "^6.56.0",
-    "@pulumi/cloudflare": "^6.12.0",
+    "@pulumi/cloudflare": "^6.15.0",
     "@pulumi/pulumi": "^3.214.1",
     "@types/aws-lambda": "^8.10.142",
     "@types/node": "^25.0.3",
