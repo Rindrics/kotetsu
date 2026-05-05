@@ -42,7 +42,7 @@ jobs:
         with:
           node-version: '24'
           cache: 'pnpm'
-          cache-dependency-path: infrastructure/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -99,7 +99,7 @@ jobs:
         with:
           node-version: '24'
           cache: 'pnpm'
-          cache-dependency-path: infrastructure/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
