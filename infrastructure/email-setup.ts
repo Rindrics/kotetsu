@@ -1,7 +1,32 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const config = new pulumi.Config('kotetsu');
+
+// Helper function to create Lambda code archive from directory
+function createLambdaCodeArchive(dirPath: string): pulumi.asset.AssetArchive {
+	const assets: { [key: string]: pulumi.asset.Asset } = {};
+
+	const walkDir = (dir: string, prefix: string = '') => {
+		for (const file of fs.readdirSync(dir)) {
+			const filePath = path.join(dir, file);
+			const assetPath = prefix ? `${prefix}/${file}` : file;
+
+			if (fs.statSync(filePath).isDirectory()) {
+				// Skip .git and other non-essential directories
+				if (file === '.git' || file === '.gitignore') continue;
+				walkDir(filePath, assetPath);
+			} else {
+				assets[assetPath] = new pulumi.asset.FileAsset(filePath);
+			}
+		}
+	};
+
+	walkDir(dirPath);
+	return new pulumi.asset.AssetArchive(assets);
+}
 
 // Get configuration from Pulumi config (all required)
 const sesReceiverEmail = config.require('sesReceiverEmail');
@@ -67,10 +92,7 @@ const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
 	runtime: 'nodejs22.x',
 	role: lambdaRole.arn,
 	handler: 'index.handler',
-	code: new pulumi.asset.AssetArchive({
-		'index.js': new pulumi.asset.FileAsset('./lambda/index.js'),
-		'email-parser.js': new pulumi.asset.FileAsset('./lambda/email-parser.js'),
-	}),
+	code: createLambdaCodeArchive('./lambda'),
 	environment: {
 		variables: {
 			ALLOWED_EMAIL_ADDRESSES: allowedEmailAddresses,
