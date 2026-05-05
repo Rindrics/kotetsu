@@ -61,13 +61,15 @@ new aws.iam.RolePolicy('lambda-logs-policy', {
 });
 
 // 3. Create Lambda Function
-// Lambda code is in infrastructure/lambda directory
-// Pulumi will automatically package it
+// Package only compiled .js files (not .ts source, .json config, or subdirectories)
 const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
 	runtime: 'nodejs22.x',
 	role: lambdaRole.arn,
 	handler: 'index.handler',
-	code: new pulumi.asset.FileArchive('./lambda'),
+	code: new pulumi.asset.AssetArchive({
+		'index.js': new pulumi.asset.FileAsset('./lambda/index.js'),
+		'email-parser.js': new pulumi.asset.FileAsset('./lambda/email-parser.js'),
+	}),
 	environment: {
 		variables: {
 			ALLOWED_EMAIL_ADDRESSES: allowedEmailAddresses,
