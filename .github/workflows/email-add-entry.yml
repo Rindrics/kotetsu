@@ -134,7 +134,7 @@ jobs:
 
           gh pr create \
             --title "Add $CITATION_KEY" \
-            --body "$(cat <<'PREOF'
+            --body "$(cat <<PREOF
 Added from email
 
 **ISBN**: \`$ISBN\`
