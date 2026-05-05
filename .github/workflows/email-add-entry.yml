@@ -134,16 +134,16 @@ jobs:
 
           gh pr create \
             --title "Add $CITATION_KEY" \
-            --body "$(cat <<PREOF
-Added from email
+            --body "$(cat <<-PREOF
+            Added from email
 
-**ISBN**: \`$ISBN\`
-**Read date**: \`$READDATE\`
-**Status**: $BIB_STATUS
+            **ISBN**: \`$ISBN\`
+            **Read date**: \`$READDATE\`
+            **Status**: $BIB_STATUS
 
-Please review, add to references.bib if needed, and merge if correct.
-PREOF
-)" \
+            Please review, add to references.bib if needed, and merge if correct.
+            PREOF
+          )" \
             --head "add-$SAFE_KEY" \
             --base "main"
 
