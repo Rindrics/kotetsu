@@ -115,6 +115,7 @@ export const handler: SNSHandler = async (event: SNSEvent): Promise<void> => {
 		}
 
 		// Process email
+		console.log(`Email content length: ${sesMessage.content.length}, first 200 chars: ${sesMessage.content.substring(0, 200)}`);
 		const result = await handleEmailMessage(sesMessage, ALLOWED_ADDRESSES, GITHUB_TOKEN);
 
 		results.push({
