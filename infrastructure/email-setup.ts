@@ -96,20 +96,11 @@ new aws.lambda.Permission('allow-sns-invoke', {
 	sourceArn: sesEmailTopic.arn
 });
 
-// 6. Create SES Receipt Rule Set
-const ruleSet = new aws.ses.ReceiptRuleSet('kotetsu-rules', {
-	ruleSetName: 'kotetsu-email-receiver'
-});
-
-// Activate the rule set
-new aws.ses.ActiveReceiptRuleSet('kotetsu-rules-active', {
-	ruleSetName: ruleSet.ruleSetName
-});
-
-// 7. Create SES Receipt Rule
-new aws.ses.ReceiptRule('email-to-sns', {
-	ruleSetName: ruleSet.ruleSetName,
-	name: 'forward-email-to-sns',
+// 6. Add rule to existing "slackmail" SES Receipt Rule Set
+// kotetsu.rindrics.com emails are forwarded to SNS for Lambda processing
+new aws.ses.ReceiptRule('kotetsu-email-to-sns', {
+	ruleSetName: 'main',
+	name: 'kotetsu-email-to-sns',
 	enabled: true,
 	scanEnabled: true,
 	recipients: [sesReceiverEmail],
@@ -121,9 +112,8 @@ new aws.ses.ReceiptRule('email-to-sns', {
 	]
 });
 
-// 8. Export outputs
+// 7. Export outputs
 export const topicArn = sesEmailTopic.arn;
 export const lambdaFunctionName = emailParserLambda.name;
 export const lambdaFunctionArn = emailParserLambda.arn;
-export const ruleSetName = ruleSet.ruleSetName;
 export const sesReceiverAddress = sesReceiverEmail;
