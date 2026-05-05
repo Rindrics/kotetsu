@@ -10,20 +10,19 @@ const accountId = config.require("cloudflareAccountId");
 // Cloudflare Pages project name
 const projectName = "kotetsu";
 
-// Custom domain to add
+// Custom domain
 const customDomain = "kotetsu.rindrics.com";
 
-// Add custom domain to Cloudflare Pages project
-// Note: DNS records for rindrics.com are managed in a separate project
-const pagesDomain = new cloudflare.PagesDomain("kotetsu-custom-domain", {
+// Fetch existing Pages domain (read-only, managed via Cloudflare console)
+const pagesDomain = cloudflare.getPagesDomain({
     accountId: accountId,
     projectName: projectName,
-    name: customDomain,
+    domainName: customDomain,
 });
 
-// Export the custom domain
-export const domainName = pagesDomain.name;
-export const status = pagesDomain.status;
+// Export the custom domain info
+export const domainName = pagesDomain.then(d => d.domainName);
+export const status = pagesDomain.then(d => d.status);
 
 // Export SES/Lambda email setup
 export const emailTopicArn = emailSetup.topicArn;
