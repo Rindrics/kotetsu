@@ -6,3 +6,4 @@
 **/*.js.map
 infrastructure/bin/
 infrastructure/node_modules/
+node_modules/

@@ -2,7 +2,7 @@
   "name": "kotetsu-email-parser",
   "version": "1.0.0",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc index.ts email-parser.ts"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
