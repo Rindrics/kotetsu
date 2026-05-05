@@ -97,10 +97,9 @@ new aws.lambda.Permission('allow-sns-invoke', {
 });
 
 // 6. Add rule to existing "slackmail" SES Receipt Rule Set
-// kotetsu.rindrics.com emails are forwarded to SNS for Lambda processing
-new aws.ses.ReceiptRule('kotetsu-email-to-sns', {
+new aws.ses.ReceiptRule('add-book-email-to-sns', {
 	ruleSetName: 'main',
-	name: 'kotetsu-email-to-sns',
+	name: 'add-book-email-to-sns',
 	enabled: true,
 	scanEnabled: true,
 	recipients: [sesReceiverEmail],
