@@ -63,7 +63,6 @@ jobs:
           pulumi config set kotetsu:sesReceiverEmail ${{ secrets.SES_RECEIVER_EMAIL }} --non-interactive
           pulumi config set kotetsu:allowedEmailAddresses ${{ vars.ALLOWED_EMAIL_ADDRESSES }} --non-interactive
           pulumi config set --secret kotetsu:githubDispatchToken ${{ secrets.GITHUB_TOKEN }} --non-interactive
-          pulumi config set kotetsu:route53ZoneId ${{ secrets.ROUTE53_ZONE_ID }} --non-interactive
 
       - name: Pulumi preview
         uses: pulumi/actions@v5
@@ -120,7 +119,6 @@ jobs:
           pulumi config set kotetsu:sesReceiverEmail ${{ secrets.SES_RECEIVER_EMAIL }} --non-interactive
           pulumi config set kotetsu:allowedEmailAddresses ${{ vars.ALLOWED_EMAIL_ADDRESSES }} --non-interactive
           pulumi config set --secret kotetsu:githubDispatchToken ${{ secrets.GITHUB_TOKEN }} --non-interactive
-          pulumi config set kotetsu:route53ZoneId ${{ secrets.ROUTE53_ZONE_ID }} --non-interactive
 
       - name: Pulumi up
         uses: pulumi/actions@v5
