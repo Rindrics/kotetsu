@@ -29,5 +29,4 @@ export const status = pagesDomain.status;
 export const emailTopicArn = emailSetup.topicArn;
 export const emailLambdaFunctionName = emailSetup.lambdaFunctionName;
 export const emailLambdaFunctionArn = emailSetup.lambdaFunctionArn;
-export const emailRuleSetName = emailSetup.ruleSetName;
 export const emailReceiverAddress = emailSetup.sesReceiverAddress;

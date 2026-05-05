@@ -4,7 +4,8 @@
   "description": "Infrastructure for kotetsu bibliography project",
   "main": "index.ts",
   "scripts": {
-    "build": "tsc",
+    "build:lambda": "cd lambda && tsc",
+    "build": "pnpm run build:lambda",
     "up": "pulumi up",
     "preview": "pulumi preview",
     "destroy": "pulumi destroy"

@@ -1,2 +1,8 @@
 *_bibertool.bib
 *.blg
+
+# TypeScript compiled output
+infrastructure/**/*.js
+infrastructure/**/*.js.map
+infrastructure/bin/
+infrastructure/node_modules/
