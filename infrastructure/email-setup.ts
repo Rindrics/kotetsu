@@ -70,6 +70,7 @@ const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
 	code: new pulumi.asset.AssetArchive({
 		'index.js': new pulumi.asset.FileAsset('./lambda/index.js'),
 		'email-parser.js': new pulumi.asset.FileAsset('./lambda/email-parser.js'),
+		'node_modules': new pulumi.asset.FileAsset('./lambda/node_modules'),
 	}),
 	environment: {
 		variables: {
