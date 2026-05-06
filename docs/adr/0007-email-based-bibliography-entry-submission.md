@@ -76,7 +76,7 @@ GitHub Actions Workflow (email-add-entry)
   - Runtime: Node.js 18.x
   - Handler: `infrastructure/lambda/index.ts`
   - Code source: `infrastructure/lambda/email-parser.ts`
-  - Env vars: `ALLOWED_EMAIL_ADDRESSES`, `GITHUB_DISPATCH_TOKEN`
+  - Env vars: `ALLOWED_EMAIL_ADDRESSES`, `REPOSITORY_DISPATCH_TOKEN`
   - Timeout: 5 seconds (GitHub API call timeout)
 - **SES Receipt Rule**: Routes emails to SNS topic
   - Recipient: Configurable via `sesReceiverEmail` Pulumi config (required, no default)

@@ -94,7 +94,7 @@ const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
 	environment: {
 		variables: {
 			ALLOWED_EMAIL_ADDRESSES: allowedEmailAddresses,
-			GITHUB_DISPATCH_TOKEN: githubDispatchToken
+			REPOSITORY_DISPATCH_TOKEN: githubDispatchToken
 		}
 	},
 	timeout: 30,
