@@ -110,47 +110,60 @@ function normalizeDateISO8601(raw: string): string | null {
  * SES passes the full email including headers and MIME structure
  */
 function extractPlainTextBody(fullMessage: string): string {
+	// Normalize line endings to just \n for easier parsing
+	const normalized = fullMessage.replace(/\r\n/g, '\n');
+
 	// Split headers from body
-	const headerEndIndex = fullMessage.indexOf('\n\n');
+	const headerEndIndex = normalized.indexOf('\n\n');
 	if (headerEndIndex === -1) {
 		return fullMessage;
 	}
 
-	const headers = fullMessage.substring(0, headerEndIndex);
-	let bodyContent = fullMessage.substring(headerEndIndex + 2);
+	const headers = normalized.substring(0, headerEndIndex);
+	const bodyContent = normalized.substring(headerEndIndex + 2);
 
 	// Check if this is a multipart message
 	const contentTypeMatch = headers.match(/Content-Type:\s*([^;\n]+)/i);
 	if (!contentTypeMatch) {
-		return bodyContent;
+		return fullMessage;
 	}
 
 	const contentType = contentTypeMatch[1].trim().toLowerCase();
 
-	// If not multipart, return body as-is
+	// If not multipart, return original body as-is
 	if (!contentType.startsWith('multipart/')) {
-		return bodyContent;
+		return fullMessage;
 	}
 
 	// Extract boundary from Content-Type header
 	const boundaryMatch = headers.match(/boundary="?([^";\n]+)"?/i);
 	if (!boundaryMatch) {
-		return bodyContent;
+		return fullMessage;
 	}
 
-	const boundary = boundaryMatch[1];
+	const boundary = boundaryMatch[1].trim();
+	const escapedBoundary = boundary.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-	// Find text/plain section
+	// Find text/plain section - match content between text/plain header and next boundary
 	const plainTextMatch = bodyContent.match(
-		new RegExp(`--${boundary.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\n]*\nContent-Type: text/plain[^\n]*\n(?:Content-Transfer-Encoding[^\n]*\n)?(?:Content-Disposition[^\n]*\n)?(?:\n)?([\s\S]*?)(?:\n--${boundary.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|$)`)
+		new RegExp(
+			`--${escapedBoundary}[^\n]*\n` +
+			`Content-Type: text/plain[^\n]*\n` +
+			`(?:Content-Transfer-Encoding[^\n]*\n)?` +
+			`(?:Content-Disposition[^\n]*\n)?` +
+			`\n` +
+			`([\\s\\S]*?)` +
+			`(?:\n--${escapedBoundary}|$)`,
+			'i'
+		)
 	);
 
 	if (plainTextMatch && plainTextMatch[1]) {
 		return plainTextMatch[1].trim();
 	}
 
-	// Fallback: return body as-is
-	return bodyContent;
+	// Fallback: return original message as-is
+	return fullMessage;
 }
 
 /**
