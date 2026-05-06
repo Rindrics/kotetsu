@@ -23,6 +23,7 @@ export interface BookInfo {
  * BookInfo から導出するが、正規化後の値を保持する
  */
 export interface CitationKeyParts {
+  /** AuthorName.last から導出 */
   familyName: string;
   year: number;
   titleWords: [string, string];

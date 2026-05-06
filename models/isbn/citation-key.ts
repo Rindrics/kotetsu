@@ -6,48 +6,45 @@
  */
 
 import { hasJapanese, normalizeForCitationKey } from '../../lib/romanize';
+import type { AuthorName } from './domain';
 
 /**
  * citation key 生成
  * 形式: {familyName}-{year}-{word1}-{word2}
  *
  * @example
- * buildCitationKey("McConnell, Steve", 2004, "Code Complete")
+ * buildCitationKey({ first: "Steve", last: "McConnell" }, 2004, "Code Complete")
  * // => "mcconnell-2004-code-complete"
  *
  * @example 日本語（ローマ字変換後）
- * buildCitationKey("森田, 真生", 2015, "数学する身体", romanizerFn)
+ * buildCitationKey({ first: "善紀", last: "森田" }, 2015, "数学する身体", romanizerFn)
  * // => "morita-2015-sugakusuru-karada"
  */
 export async function buildCitationKey(
-  author: string,
+  author: AuthorName,
   year: number,
   title: string,
   romanizer?: (text: string) => Promise<string>,
 ): Promise<string> {
-  const family = await normalizeFamilyName(author, romanizer);
+  const family = await normalizeFamilyName(author.last, romanizer);
   const words = await extractTitleWords(title, romanizer);
   return `${family}-${year}-${words[0]}-${words[1]}`;
 }
 
 /**
- * AuthorName から last name を取得して正規化
+ * Family name を正規化
  * 日本語の場合はローマ字変換
  */
 async function normalizeFamilyName(
-  authorName: string,
+  familyName: string,
   romanizer?: (text: string) => Promise<string>,
 ): Promise<string> {
-  // AuthorName は ドメインモデルなので、ここでは author.last として受け取る想定
-  // ただし citation-key.ts の利用元が author string を渡すため、互換性のためこのまま
-  const family = authorName.split(',')[0].trim();
-
-  if (hasJapanese(family) && romanizer) {
-    const roma = await romanizer(family);
+  if (hasJapanese(familyName) && romanizer) {
+    const roma = await romanizer(familyName);
     return normalizeForCitationKey(roma);
   }
 
-  return normalizeForCitationKey(family);
+  return normalizeForCitationKey(familyName);
 }
 
 /**
