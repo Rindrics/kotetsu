@@ -4,6 +4,7 @@
 # TypeScript compiled output
 **/*.js
 **/*.js.map
+!scripts/*.js
 infrastructure/bin/
 infrastructure/node_modules/
 node_modules/
