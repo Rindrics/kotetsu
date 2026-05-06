@@ -5,8 +5,8 @@
     "build": "tsc"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.1.2",
-    "kuroshiro": "^1.2.2",
+    "jsonwebtoken": "^9.0.3",
+    "kuroshiro": "^1.2.0",
     "node-isbn": "^1.1.2"
   },
   "devDependencies": {

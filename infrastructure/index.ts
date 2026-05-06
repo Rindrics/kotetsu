@@ -1,6 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as cloudflare from "@pulumi/cloudflare";
 import * as emailSetup from "./email-setup";
+import * as isbnLambdaSetup from "./isbn-lambda-setup";
 
 const config = new pulumi.Config();
 
@@ -29,3 +30,8 @@ export const emailTopicArn = emailSetup.topicArn;
 export const emailLambdaFunctionName = emailSetup.lambdaFunctionName;
 export const emailLambdaFunctionArn = emailSetup.lambdaFunctionArn;
 export const emailReceiverAddress = emailSetup.sesReceiverAddress;
+
+// Export ISBN Lambda setup
+export const isbnLambdaFunctionUrl = isbnLambdaSetup.functionUrl;
+export const isbnLambdaFunctionArn = isbnLambdaSetup.functionArn;
+export const isbnLambdaFunctionName = isbnLambdaSetup.functionName;
