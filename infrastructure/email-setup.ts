@@ -28,6 +28,40 @@ function createLambdaCodeArchive(dirPath: string): pulumi.asset.AssetArchive {
 	return new pulumi.asset.AssetArchive(assets);
 }
 
+// Helper function to create Lambda Layer archive (requires nodejs/node_modules structure)
+function createLambdaLayerArchive(dirPath: string): pulumi.asset.AssetArchive {
+	const assets: { [key: string]: pulumi.asset.Asset } = {};
+
+	const walkDir = (dir: string, prefix: string = '') => {
+		for (const file of fs.readdirSync(dir)) {
+			const filePath = path.join(dir, file);
+			const assetPath = prefix ? `${prefix}/${file}` : file;
+
+			if (fs.statSync(filePath).isDirectory()) {
+				if (file === '.git' || file === '.gitignore') continue;
+				walkDir(filePath, assetPath);
+			} else {
+				assets[assetPath] = new pulumi.asset.FileAsset(filePath);
+			}
+		}
+	};
+
+	// Lambda Layer requires nodejs/node_modules structure
+	const nodeModulesPath = path.join(dirPath, 'node_modules');
+	if (fs.existsSync(nodeModulesPath)) {
+		const layerAssets: { [key: string]: pulumi.asset.Asset } = {};
+		const innerAssets: { [key: string]: pulumi.asset.Asset } = {};
+
+		walkDir(nodeModulesPath, 'node_modules');
+
+		layerAssets['nodejs'] = new pulumi.asset.AssetArchive(assets);
+		return new pulumi.asset.AssetArchive(layerAssets);
+	}
+
+	walkDir(dirPath);
+	return new pulumi.asset.AssetArchive(assets);
+}
+
 // Get configuration from Pulumi config (all required)
 const sesReceiverEmail = config.require('sesReceiverEmail');
 const githubDispatchToken = config.requireSecret('githubDispatchToken');
@@ -89,7 +123,7 @@ new aws.iam.RolePolicy('lambda-logs-policy', {
 // 3. Create Lambda Layer for Sentry
 const sentryLayer = new aws.lambda.LayerVersion('sentry-layer', {
 	layerName: 'sentry-layer',
-	code: createLambdaCodeArchive('./lambda-layer'),
+	code: createLambdaLayerArchive('./lambda-layer'),
 	compatibleRuntimes: ['nodejs22.x'],
 	sourceCodeHash: 'auto'
 });
