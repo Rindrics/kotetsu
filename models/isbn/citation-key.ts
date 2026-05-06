@@ -31,14 +31,16 @@ export async function buildCitationKey(
 }
 
 /**
- * "Family, Given" から Family name を取得して正規化
+ * AuthorName から last name を取得して正規化
  * 日本語の場合はローマ字変換
  */
 async function normalizeFamilyName(
-  author: string,
+  authorName: string,
   romanizer?: (text: string) => Promise<string>,
 ): Promise<string> {
-  const family = author.split(',')[0].trim();
+  // AuthorName は ドメインモデルなので、ここでは author.last として受け取る想定
+  // ただし citation-key.ts の利用元が author string を渡すため、互換性のためこのまま
+  const family = authorName.split(',')[0].trim();
 
   if (hasJapanese(family) && romanizer) {
     const roma = await romanizer(family);

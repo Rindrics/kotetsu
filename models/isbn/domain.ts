@@ -3,13 +3,18 @@
  * node-isbn の内部実装・レスポンス形式に依存しない純粋なドメイン表現
  */
 
+export interface AuthorName {
+  first: string;
+  last: string;
+}
+
 export interface BookInfo {
   title: string;
-  /** "Family, Given" または "姓,名" 形式 — BibEntry.author と同じ規約 */
-  author: string;
+  author: AuthorName;
   year: number;
   publisher?: string;
   isbn13: string;
+  isbn10?: string;
   url?: string;
 }
 

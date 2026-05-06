@@ -6,10 +6,11 @@ describe('bibtex-formatter.ts - formatAsBibEntry', () => {
   it('全フィールドがある場合', () => {
     const book: BookInfo = {
       title: 'Code Complete',
-      author: 'McConnell, Steve',
+      author: { first: 'Steve', last: 'McConnell' },
       year: 2004,
       publisher: 'O\'Reilly Media, Inc.',
       isbn13: '9780735619678',
+      isbn10: '0735619670',
       url: 'https://books.google.com/books?id=...',
     };
 
@@ -21,6 +22,7 @@ describe('bibtex-formatter.ts - formatAsBibEntry', () => {
     expect(result).toContain('year = 2004,');
     expect(result).toContain('publisher = {O\'Reilly Media, Inc.},');
     expect(result).toContain('isbn = 9780735619678,');
+    expect(result).toContain('isbn10 = 0735619670,');
     expect(result).toContain('url = {https://books.google.com/books?id=...},');
     expect(result).toContain('}');
   });
@@ -28,7 +30,7 @@ describe('bibtex-formatter.ts - formatAsBibEntry', () => {
   it('publisherがない場合は省略', () => {
     const book: BookInfo = {
       title: 'Test Book',
-      author: 'Smith, John',
+      author: { first: 'John', last: 'Smith' },
       year: 2020,
       isbn13: '9780000000000',
     };
@@ -42,7 +44,7 @@ describe('bibtex-formatter.ts - formatAsBibEntry', () => {
   it('urlがない場合は省略', () => {
     const book: BookInfo = {
       title: 'Test Book',
-      author: 'Smith, John',
+      author: { first: 'John', last: 'Smith' },
       year: 2020,
       publisher: 'Test Publisher',
       isbn13: '9780000000000',
@@ -57,7 +59,7 @@ describe('bibtex-formatter.ts - formatAsBibEntry', () => {
   it('publisherとurlの両方がない場合', () => {
     const book: BookInfo = {
       title: 'Minimal Book',
-      author: 'Doe, Jane',
+      author: { first: 'Jane', last: 'Doe' },
       year: 2015,
       isbn13: '9781234567890',
     };
@@ -75,7 +77,7 @@ describe('bibtex-formatter.ts - formatAsBibEntry', () => {
   it('ISBNから記号を除去して数値化', () => {
     const book: BookInfo = {
       title: 'Test',
-      author: 'Author, Test',
+      author: { first: 'Test', last: 'Author' },
       year: 2020,
       isbn13: '978-0-123-45678-9',
     };
@@ -88,7 +90,7 @@ describe('bibtex-formatter.ts - formatAsBibEntry', () => {
   it('タイトルに改行が含まれる場合はスペースに変換', () => {
     const book: BookInfo = {
       title: 'The Quick\nBrown\nFox',
-      author: 'Author, Test',
+      author: { first: 'Test', last: 'Author' },
       year: 2020,
       isbn13: '9780000000000',
     };
@@ -98,17 +100,19 @@ describe('bibtex-formatter.ts - formatAsBibEntry', () => {
     expect(result).toContain('title = {The Quick Brown Fox},');
   });
 
-  it('著者名に複数スペースが含まれる場合は正規化', () => {
+  it('isbn10があれば追加', () => {
     const book: BookInfo = {
       title: 'Test',
-      author: 'Smith,    John',
+      author: { first: 'Test', last: 'Author' },
       year: 2020,
       isbn13: '9780000000000',
+      isbn10: '0000000000',
     };
 
     const result = formatAsBibEntry(book, 'test-key');
 
-    expect(result).toContain('author = {Smith, John},');
+    expect(result).toContain('isbn = 9780000000000,');
+    expect(result).toContain('isbn10 = 0000000000,');
   });
 
   it('フォーマットが末尾カンマあり', () => {

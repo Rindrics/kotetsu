@@ -87,7 +87,7 @@ async function handleIsbnSearch(isbnStr: string): Promise<APIGatewayProxyResult>
 
       const year = parseInt(publishedDate.match(/^\d{4}/)![0], 10);
       const author = normalizeAuthor(authors[0]);
-      const isbn13 = extractIsbn13(bookData.industryIdentifiers) ?? isbnStr;
+      const { isbn13, isbn10 } = extractIsbns(bookData.industryIdentifiers, isbnStr);
 
       resolve(
         successResponse({
@@ -96,6 +96,7 @@ async function handleIsbnSearch(isbnStr: string): Promise<APIGatewayProxyResult>
           year,
           publisher,
           isbn13,
+          isbn10,
           url: infoLink,
         }),
       );
@@ -104,33 +105,48 @@ async function handleIsbnSearch(isbnStr: string): Promise<APIGatewayProxyResult>
 }
 
 /**
- * "Steve McConnell" → "McConnell, Steve"
+ * "Steve McConnell" → { first: "Steve", last: "McConnell" }
  */
-function normalizeAuthor(rawAuthor: string): string {
+function normalizeAuthor(rawAuthor: string): { first: string; last: string } {
   const parts = rawAuthor.trim().split(/\s+/);
   if (parts.length < 2) {
-    return rawAuthor;
+    return { first: rawAuthor, last: rawAuthor };
   }
-  const family = parts[parts.length - 1];
-  const given = parts.slice(0, -1).join(' ');
-  return `${family}, ${given}`;
+  const last = parts[parts.length - 1];
+  const first = parts.slice(0, -1).join(' ');
+  return { first, last };
 }
 
 /**
- * ISBN-13を優先取得
+ * ISBN-13 と ISBN-10 を抽出
  */
-function extractIsbn13(
-  identifiers?: Array<{ type: string; identifier: string }>,
-): string | null {
+function extractIsbns(
+  identifiers: Array<{ type: string; identifier: string }> | undefined,
+  sourceIsbn: string,
+): { isbn13: string; isbn10?: string } {
+  const result = {
+    isbn13: sourceIsbn,
+    isbn10: undefined as string | undefined,
+  };
+
   if (!identifiers) {
-    return null;
+    return result;
   }
+
   const isbn13 = identifiers.find((id) => id.type === 'ISBN_13');
-  if (isbn13) {
-    return isbn13.identifier;
-  }
   const isbn10 = identifiers.find((id) => id.type === 'ISBN_10');
-  return isbn10?.identifier ?? null;
+
+  if (isbn13) {
+    result.isbn13 = isbn13.identifier;
+  } else if (isbn10) {
+    result.isbn13 = isbn10.identifier;
+  }
+
+  if (isbn10) {
+    result.isbn10 = isbn10.identifier;
+  }
+
+  return result;
 }
 
 /**

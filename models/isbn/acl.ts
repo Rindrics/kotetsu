@@ -3,7 +3,7 @@
  */
 
 import type { IsbnApiResponse } from './infrastructure';
-import type { BookInfo } from './domain';
+import type { BookInfo, AuthorName } from './domain';
 
 /**
  * node-isbn レスポンス → ドメインモデル BookInfo への変換
@@ -20,14 +20,14 @@ export function toBookInfo(raw: IsbnApiResponse, sourceIsbn: string): BookInfo {
     throw new Error('authors が取得できませんでした');
   }
 
-  const author = normalizeAuthor(authors[0]);
+  const author = parseAuthor(authors[0]);
 
   const year = extractYear(raw.publishedDate);
   if (!year) {
     throw new Error(`publishedDate を年として解析できませんでした: ${raw.publishedDate}`);
   }
 
-  const isbn13 = extractIsbn13(raw.industryIdentifiers) ?? sourceIsbn;
+  const { isbn13, isbn10 } = extractIsbns(raw.industryIdentifiers, sourceIsbn);
 
   return {
     title,
@@ -35,22 +35,35 @@ export function toBookInfo(raw: IsbnApiResponse, sourceIsbn: string): BookInfo {
     year,
     publisher: raw.publisher?.trim(),
     isbn13,
+    isbn10,
     url: raw.infoLink,
   };
 }
 
 /**
- * "Steve McConnell" (Given Family) → "McConnell, Steve" (Family, Given)
- * BibEntry.author 規約への変換
+ * "Steve McConnell" (Given Family) → { first: "Steve", last: "McConnell" }
+ * または "McConnell, Steve" (Family, Given) → { first: "Steve", last: "McConnell" }
+ * または "甲野善紀" (日本語) → { first: "善紀", last: "甲野" }
  */
-function normalizeAuthor(rawAuthor: string): string {
-  const parts = rawAuthor.trim().split(/\s+/);
-  if (parts.length < 2) {
-    return rawAuthor;
+function parseAuthor(rawAuthor: string): AuthorName {
+  const trimmed = rawAuthor.trim();
+
+  // カンマで区切られている場合: "Family, Given" 形式
+  if (trimmed.includes(',')) {
+    const [family, given] = trimmed.split(',').map((s) => s.trim());
+    return { first: given || family, last: family };
   }
-  const family = parts[parts.length - 1];
-  const given = parts.slice(0, -1).join(' ');
-  return `${family}, ${given}`;
+
+  // スペースで区切られている場合: "Given Family" 形式
+  const parts = trimmed.split(/\s+/);
+  if (parts.length >= 2) {
+    const last = parts[parts.length - 1];
+    const first = parts.slice(0, -1).join(' ');
+    return { first, last };
+  }
+
+  // 1単語のみ（日本語や単一名）
+  return { first: trimmed, last: trimmed };
 }
 
 /**
@@ -65,18 +78,34 @@ function extractYear(publishedDate?: string): number | null {
 }
 
 /**
- * industryIdentifiers から ISBN-13 を優先的に取得
+ * industryIdentifiers から ISBN-13 と ISBN-10 を抽出
+ * ISBN-13 を優先、ない場合は ISBN-10
  */
-function extractIsbn13(
-  identifiers?: IsbnApiResponse['industryIdentifiers'],
-): string | null {
+function extractIsbns(
+  identifiers: IsbnApiResponse['industryIdentifiers'] | undefined,
+  sourceIsbn: string,
+): { isbn13: string; isbn10?: string } {
+  const result = {
+    isbn13: sourceIsbn,
+    isbn10: undefined as string | undefined,
+  };
+
   if (!identifiers) {
-    return null;
+    return result;
   }
+
   const isbn13 = identifiers.find((id) => id.type === 'ISBN_13');
-  if (isbn13) {
-    return isbn13.identifier;
-  }
   const isbn10 = identifiers.find((id) => id.type === 'ISBN_10');
-  return isbn10?.identifier ?? null;
+
+  if (isbn13) {
+    result.isbn13 = isbn13.identifier;
+  } else if (isbn10) {
+    result.isbn13 = isbn10.identifier;
+  }
+
+  if (isbn10) {
+    result.isbn10 = isbn10.identifier;
+  }
+
+  return result;
 }
