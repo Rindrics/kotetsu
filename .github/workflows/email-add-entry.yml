@@ -41,16 +41,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISBN: ${{ github.event.client_payload.isbn }}
           READDATE: ${{ github.event.client_payload.readDate }}
+          LAMBDA_API_URL: ${{ secrets.ISBN_SEARCH_API_URL }}
+          LAMBDA_JWT_TOKEN: ${{ secrets.LAMBDA_JWT_TOKEN }}
         run: |
-          chmod +x .github/scripts/add-entry.sh
           set +e
-          OUTPUT=$(.github/scripts/add-entry.sh "$ISBN" "$READDATE" 2>&1)
+          OUTPUT=$(pnpm exec tsx .github/scripts/add-entry.ts 2>&1)
           EXIT_CODE=$?
           set -e
 
           if [ $EXIT_CODE -eq 0 ]; then
-            echo "$OUTPUT" | grep -E "^(citation_key|safe_key)=" >> $GITHUB_OUTPUT
-          elif echo "$OUTPUT" | grep -q "duplicate=true"; then
+            echo "$OUTPUT" | grep "^citation_key=" >> $GITHUB_OUTPUT
+          elif echo "$OUTPUT" | grep -q "^duplicate=true"; then
             echo "duplicate=true" >> $GITHUB_OUTPUT
           else
             echo "Script failed:"
@@ -61,7 +62,7 @@ jobs:
       - name: Report duplicate (skip)
         if: steps.process.outputs.duplicate == 'true'
         run: |
-          echo "Entry already exists in custom_info.yaml, skipping"
+          echo "Entry already exists, skipping"
 
       - name: Report failure
         if: failure()

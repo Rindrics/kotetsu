@@ -7,6 +7,9 @@
 	let searchQuery = $state('');
 	let showTagSuggestions = $state(false);
 	let selectedSuggestionIndex = $state(-1);
+	let isbnSearchResult = $state<any>(null);
+	let isbnSearchError = $state('');
+	let isbnSearchLoading = $state(false);
 
 	// Collect all unique tags
 	const allTags = $derived(() => {
@@ -27,6 +30,45 @@
 	// Get tag query (text after #)
 	const tagQuery = $derived(() => (isTagMode() ? searchQuery.slice(1).toLowerCase() : ''));
 
+	// Check if in ISBN search mode (starts with isbn:)
+	const isIsbnMode = $derived(() => searchQuery.startsWith('isbn:'));
+
+	// Get ISBN query (text after isbn:)
+	const isbnQuery = $derived(() => (isIsbnMode() ? searchQuery.slice(5).trim() : ''));
+
+	// ISBN search function
+	async function searchIsbn() {
+		const isbn = isbnQuery();
+		if (!isbn) {
+			isbnSearchError = 'ISBN を入力してください';
+			return;
+		}
+
+		isbnSearchLoading = true;
+		isbnSearchError = '';
+		isbnSearchResult = null;
+
+		try {
+			const response = await fetch('/api/isbn', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ isbn })
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+				isbnSearchError = errorData.message || `エラー: ${response.status}`;
+				return;
+			}
+
+			isbnSearchResult = await response.json();
+		} catch (err) {
+			isbnSearchError = err instanceof Error ? err.message : '検索に失敗しました';
+		} finally {
+			isbnSearchLoading = false;
+		}
+	}
+
 	// Filter tag suggestions
 	const tagSuggestions = $derived(() => {
 		if (!isTagMode()) return [];
@@ -35,6 +77,11 @@
 	});
 
 	const filteredItems = $derived(() => {
+		// Hide items when in ISBN search mode
+		if (isIsbnMode()) {
+			return [];
+		}
+
 		if (!searchQuery.trim()) return data.items;
 
 		// Tag search mode
@@ -75,6 +122,14 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
+		// ISBN search: Enter key to search
+		if (isIsbnMode() && event.key === 'Enter') {
+			event.preventDefault();
+			searchIsbn();
+			return;
+		}
+
+		// Tag suggestions navigation
 		if (!showTagSuggestions || tagSuggestions().length === 0) return;
 
 		if (event.key === 'ArrowDown') {
@@ -93,6 +148,11 @@
 	}
 
 	function handleInput() {
+		// Reset search results when query changes
+		if (!isIsbnMode()) {
+			isbnSearchResult = null;
+			isbnSearchError = '';
+		}
 		showTagSuggestions = isTagMode();
 		selectedSuggestionIndex = -1;
 	}
@@ -138,7 +198,7 @@
 					onkeydown={handleKeydown}
 					onblur={handleBlur}
 					onfocus={() => (showTagSuggestions = isTagMode())}
-					placeholder="検索... (#でタグ検索)"
+					placeholder="検索... (#タグ検索、isbn: で検索)"
 					class="w-full rounded-xl border border-slate-700 bg-slate-800/80 py-3 pl-12 pr-4 text-slate-200 placeholder-slate-500 outline-none transition-all focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
 				/>
 				{#if searchQuery}
@@ -183,6 +243,86 @@
 
 	<main class="mx-auto max-w-4xl px-6 py-12">
 		<div class="space-y-8">
+			<!-- ISBN Search Result -->
+			{#if isIsbnMode()}
+				<div class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8">
+					{#if isbnSearchLoading}
+						<div class="flex items-center justify-center gap-3 text-amber-400">
+							<svg class="h-5 w-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+								/>
+							</svg>
+							<span>検索中...</span>
+						</div>
+					{:else if isbnSearchError}
+						<div class="text-center">
+							<p class="text-red-400 mb-3">{isbnSearchError}</p>
+							<button
+								onclick={searchIsbn}
+								class="px-4 py-2 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors"
+							>
+								再試行
+							</button>
+						</div>
+					{:else if isbnSearchResult}
+						<div class="space-y-4">
+							<div>
+								<h3 class="text-xl font-serif font-bold text-amber-100 mb-2">
+									{isbnSearchResult.title}
+								</h3>
+								<div class="space-y-2 text-sm text-slate-400">
+									<p><span class="text-slate-500">著者:</span> {isbnSearchResult.author.last}, {isbnSearchResult.author.first}</p>
+									<p><span class="text-slate-500">出版年:</span> {isbnSearchResult.year}</p>
+									{#if isbnSearchResult.publisher}
+										<p><span class="text-slate-500">出版社:</span> {isbnSearchResult.publisher}</p>
+									{/if}
+									{#if isbnSearchResult.isbn13}
+										<p><span class="text-slate-500">ISBN-13:</span> {isbnSearchResult.isbn13}</p>
+									{/if}
+									{#if isbnSearchResult.isbn10}
+										<p><span class="text-slate-500">ISBN-10:</span> {isbnSearchResult.isbn10}</p>
+									{/if}
+								</div>
+							</div>
+							<div class="flex gap-3 pt-4 border-t border-slate-700/50">
+								<button
+									onclick={searchIsbn}
+									class="flex-1 px-4 py-2 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
+								>
+									リスト追加
+								</button>
+								<button
+									onclick={() => {
+										searchQuery = '';
+										isbnSearchResult = null;
+									}}
+									class="px-4 py-2 rounded-lg bg-slate-700/20 text-slate-400 hover:bg-slate-700/40 transition-colors"
+								>
+									閉じる
+								</button>
+							</div>
+						</div>
+					{:else if isbnQuery()}
+						<div class="text-center">
+							<p class="text-slate-400 mb-4">ISBN: {isbnQuery()}</p>
+							<button
+								onclick={searchIsbn}
+								class="px-4 py-2 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
+							>
+								検索
+							</button>
+						</div>
+					{:else}
+						<p class="text-center text-slate-500">ISBN を入力して検索...</p>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Normal Items List -->
 			{#each filteredItems() as item}
 				<article
 					class="group relative overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8 shadow-xl backdrop-blur-sm transition-all duration-300 hover:border-amber-500/30 hover:shadow-amber-500/10"
