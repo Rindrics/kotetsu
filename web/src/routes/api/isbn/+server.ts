@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = async ({ request }) => {
-	const { isbn } = await request.json();
+export const GET: RequestHandler = async ({ url }) => {
+	const isbn = url.searchParams.get('isbn');
 
 	if (!isbn || typeof isbn !== 'string') {
 		return error(400, 'isbn required');

@@ -49,10 +49,9 @@
 		isbnSearchResult = null;
 
 		try {
-			const response = await fetch('/api/isbn', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ isbn })
+			const response = await fetch(`/api/isbn?isbn=${encodeURIComponent(isbn)}`, {
+				method: 'GET',
+				headers: { 'Content-Type': 'application/json' }
 			});
 
 			if (!response.ok) {
