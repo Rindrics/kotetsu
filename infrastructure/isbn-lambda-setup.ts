@@ -150,7 +150,7 @@ const isbnSearchIntegration = new aws.apigateway.Integration('isbn-search-integr
 	type: 'AWS_PROXY',
 	integrationHttpMethod: 'POST',
 	uri: pulumi.interpolate`arn:aws:apigateway:${currentRegion.then(r => r.name)}:lambda:path/2015-03-31/functions/${isbnSearchLambda.arn}/invocations`
-});
+}, { dependsOn: [isbnSearchMethod] });
 
 // 9. Create /romanize resource and method
 const romanizeResource = new aws.apigateway.Resource('romanize-resource', {
@@ -174,7 +174,7 @@ const romanizeIntegration = new aws.apigateway.Integration('romanize-integration
 	type: 'AWS_PROXY',
 	integrationHttpMethod: 'POST',
 	uri: pulumi.interpolate`arn:aws:apigateway:${currentRegion.then(r => r.name)}:lambda:path/2015-03-31/functions/${isbnSearchLambda.arn}/invocations`
-});
+}, { dependsOn: [romanizeMethod] });
 
 // 10. Create deployment (depends on all methods and integrations)
 const deployment = new aws.apigateway.Deployment('isbn-api-deployment', {
