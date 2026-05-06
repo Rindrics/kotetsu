@@ -106,11 +106,62 @@ function normalizeDateISO8601(raw: string): string | null {
 }
 
 /**
+ * Extract plain text body from MIME email message
+ * SES passes the full email including headers and MIME structure
+ */
+function extractPlainTextBody(fullMessage: string): string {
+	// Split headers from body
+	const headerEndIndex = fullMessage.indexOf('\n\n');
+	if (headerEndIndex === -1) {
+		return fullMessage;
+	}
+
+	const headers = fullMessage.substring(0, headerEndIndex);
+	let bodyContent = fullMessage.substring(headerEndIndex + 2);
+
+	// Check if this is a multipart message
+	const contentTypeMatch = headers.match(/Content-Type:\s*([^;\n]+)/i);
+	if (!contentTypeMatch) {
+		return bodyContent;
+	}
+
+	const contentType = contentTypeMatch[1].trim().toLowerCase();
+
+	// If not multipart, return body as-is
+	if (!contentType.startsWith('multipart/')) {
+		return bodyContent;
+	}
+
+	// Extract boundary from Content-Type header
+	const boundaryMatch = headers.match(/boundary="?([^";\n]+)"?/i);
+	if (!boundaryMatch) {
+		return bodyContent;
+	}
+
+	const boundary = boundaryMatch[1];
+
+	// Find text/plain section
+	const plainTextMatch = bodyContent.match(
+		new RegExp(`--${boundary.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\n]*\nContent-Type: text/plain[^\n]*\n(?:Content-Transfer-Encoding[^\n]*\n)?(?:Content-Disposition[^\n]*\n)?(?:\n)?([\s\S]*?)(?:\n--${boundary.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|$)`)
+	);
+
+	if (plainTextMatch && plainTextMatch[1]) {
+		return plainTextMatch[1].trim();
+	}
+
+	// Fallback: return body as-is
+	return bodyContent;
+}
+
+/**
  * Parse email body to extract ISBN and read date
  * Returns parsed data or null if invalid
  */
 function parseEmailBody(text: string): ParsedEmail | null {
-	const lines = text
+	// Extract plain text body if this is a MIME message
+	const plainTextBody = extractPlainTextBody(text);
+
+	const lines = plainTextBody
 		.split('\n')
 		.map((line) => line.trim())
 		.filter((line) => line.length > 0);
