@@ -20,7 +20,7 @@ format: format-yaml
 	mv $(BIB_FILE).tmp $(BIB_FILE)
 
 format-yaml:
-	python3 -c "import yaml; d = yaml.safe_load(open('$(YAML_FILE)')); open('$(YAML_FILE)', 'w').write(yaml.dump({k: d[k] for k in sorted(d.keys())}, default_flow_style=False, sort_keys=False))"
+	pnpm exec node scripts/sort-yaml.js $(YAML_FILE)
 
 format-check:
 	@cat $(BIB_FILE) | $(DOCKER_RUN) -i node:20-alpine npx bibtex-tidy --curly --numeric --sort-fields --no-align --sort --trailing-commas > $(BIB_FILE).tmp

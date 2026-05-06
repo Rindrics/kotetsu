@@ -65,7 +65,7 @@ else
 fi
 
 # Sort YAML entries by key
-make format-yaml
+pnpm exec node scripts/sort-yaml.js contents/custom_info.yaml
 
 # Stage and commit
 git add contents/custom_info.yaml
