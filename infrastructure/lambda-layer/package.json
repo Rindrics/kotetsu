@@ -1,9 +1,0 @@
-{
-  "name": "kotetsu-lambda-layer",
-  "version": "1.0.0",
-  "description": "Sentry Lambda Layer",
-  "private": true,
-  "dependencies": {
-    "@sentry/aws-serverless": "^8.5.0"
-  }
-}

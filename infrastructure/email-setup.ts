@@ -28,45 +28,10 @@ function createLambdaCodeArchive(dirPath: string): pulumi.asset.AssetArchive {
 	return new pulumi.asset.AssetArchive(assets);
 }
 
-// Helper function to create Lambda Layer archive (requires nodejs/node_modules structure)
-function createLambdaLayerArchive(dirPath: string): pulumi.asset.AssetArchive {
-	const assets: { [key: string]: pulumi.asset.Asset } = {};
-
-	const walkDir = (dir: string, prefix: string = '') => {
-		for (const file of fs.readdirSync(dir)) {
-			const filePath = path.join(dir, file);
-			const assetPath = prefix ? `${prefix}/${file}` : file;
-
-			if (fs.statSync(filePath).isDirectory()) {
-				if (file === '.git' || file === '.gitignore') continue;
-				walkDir(filePath, assetPath);
-			} else {
-				assets[assetPath] = new pulumi.asset.FileAsset(filePath);
-			}
-		}
-	};
-
-	// Lambda Layer requires nodejs/node_modules structure
-	const nodeModulesPath = path.join(dirPath, 'node_modules');
-	if (fs.existsSync(nodeModulesPath)) {
-		const layerAssets: { [key: string]: pulumi.asset.Asset } = {};
-		const innerAssets: { [key: string]: pulumi.asset.Asset } = {};
-
-		walkDir(nodeModulesPath, 'node_modules');
-
-		layerAssets['nodejs'] = new pulumi.asset.AssetArchive(assets);
-		return new pulumi.asset.AssetArchive(layerAssets);
-	}
-
-	walkDir(dirPath);
-	return new pulumi.asset.AssetArchive(assets);
-}
-
 // Get configuration from Pulumi config (all required)
 const sesReceiverEmail = config.require('sesReceiverEmail');
 const githubDispatchToken = config.requireSecret('githubDispatchToken');
 const allowedEmailAddresses = config.require('allowedEmailAddresses');
-const sentryDsn = config.requireSecret('sentryDsn');
 
 // 1. Create SNS Topic for SES
 const sesEmailTopic = new aws.sns.Topic('ses-email-topic', {
@@ -120,27 +85,16 @@ new aws.iam.RolePolicy('lambda-logs-policy', {
 	})
 });
 
-// 3. Create Lambda Layer for Sentry
-const sentryLayer = new aws.lambda.LayerVersion('sentry-layer', {
-	layerName: 'sentry-layer',
-	code: createLambdaLayerArchive('./lambda-layer'),
-	compatibleRuntimes: ['nodejs22.x'],
-	sourceCodeHash: 'auto'
-});
-
-// 4. Create Lambda Function
+// 3. Create Lambda Function
 const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
 	runtime: 'nodejs22.x',
 	role: lambdaRole.arn,
 	handler: 'index.handler',
 	code: createLambdaCodeArchive('./lambda'),
-	layers: [sentryLayer.arn],
 	environment: {
 		variables: {
 			ALLOWED_EMAIL_ADDRESSES: allowedEmailAddresses,
-			GITHUB_DISPATCH_TOKEN: githubDispatchToken,
-			NODE_OPTIONS: '--import @sentry/aws-serverless/awslambda-auto',
-			SENTRY_DSN: sentryDsn
+			GITHUB_DISPATCH_TOKEN: githubDispatchToken
 		}
 	},
 	timeout: 30,
@@ -150,14 +104,14 @@ const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
 	}
 });
 
-// 5. Subscribe Lambda to SNS Topic
+// 4. Subscribe Lambda to SNS Topic
 new aws.sns.TopicSubscription('email-parser-subscription', {
 	topic: sesEmailTopic.arn,
 	protocol: 'lambda',
 	endpoint: emailParserLambda.arn
 });
 
-// 6. Grant Lambda permission to be invoked by SNS
+// 5. Grant Lambda permission to be invoked by SNS
 new aws.lambda.Permission('allow-sns-invoke', {
 	action: 'lambda:InvokeFunction',
 	function: emailParserLambda.name,
