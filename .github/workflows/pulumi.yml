@@ -62,7 +62,7 @@ jobs:
           pulumi config set cloudflareAccountId ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} --non-interactive
           pulumi config set kotetsu:sesReceiverEmail ${{ secrets.SES_RECEIVER_EMAIL }} --non-interactive
           pulumi config set kotetsu:allowedEmailAddresses ${{ vars.ALLOWED_EMAIL_ADDRESSES }} --non-interactive
-          pulumi config set --secret kotetsu:githubDispatchToken ${{ secrets.GITHUB_DISPATCH_TOKEN }} --non-interactive
+          pulumi config set --secret kotetsu:githubDispatchToken ${{ secrets.REPOSITORY_DISPATCH_TOKEN }} --non-interactive
 
       - name: Pulumi preview
         uses: pulumi/actions@v5
