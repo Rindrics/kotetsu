@@ -91,7 +91,7 @@ const isbnSearchLambda = new aws.lambda.Function('kotetsu-isbn-search', {
 const isbnApi = new aws.apigateway.RestApi('isbn-search-api', {
 	description: 'ISBN search and romanization API',
 	endpointConfiguration: {
-		types: ['REGIONAL']
+		types: 'REGIONAL'
 	},
 	tags: {
 		projectName: 'kotetsu'
