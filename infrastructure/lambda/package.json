@@ -5,7 +5,8 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@sentry/aws-serverless": "^8.5.0"
+    "@sentry/aws-serverless": "^8.5.0",
+    "@sentry/core": "^8.5.0"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
