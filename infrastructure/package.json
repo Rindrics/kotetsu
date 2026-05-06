@@ -4,7 +4,7 @@
   "description": "Infrastructure for kotetsu bibliography project",
   "main": "index.ts",
   "scripts": {
-    "build": "npm --prefix lambda-layer install --prod && cd lambda && pnpm build",
+    "build": "cd lambda && pnpm build",
     "up": "pulumi up",
     "preview": "pulumi preview",
     "destroy": "pulumi destroy"
