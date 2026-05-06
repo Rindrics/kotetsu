@@ -4,9 +4,15 @@
   "scripts": {
     "build": "tsc"
   },
+  "dependencies": {
+    "jsonwebtoken": "^9.1.2",
+    "kuroshiro": "^1.2.2",
+    "node-isbn": "^1.1.2"
+  },
   "devDependencies": {
     "typescript": "^5.9.3",
     "@types/aws-lambda": "^8.10.142",
-    "@types/node": "^25.0.3"
+    "@types/node": "^25.0.3",
+    "@types/jsonwebtoken": "^9.0.7"
   }
 }
