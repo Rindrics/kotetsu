@@ -86,13 +86,21 @@ new aws.iam.RolePolicy('lambda-logs-policy', {
 	})
 });
 
-// 3. Create Lambda Function
-// Package only compiled .js files (not .ts source, .json config, or subdirectories)
+// 3. Create Lambda Layer for Sentry
+const sentryLayer = new aws.lambda.LayerVersion('sentry-layer', {
+	layerName: 'sentry-layer',
+	code: createLambdaCodeArchive('./lambda-layer'),
+	compatibleRuntimes: ['nodejs22.x'],
+	sourceCodeHash: 'auto'
+});
+
+// 4. Create Lambda Function
 const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
 	runtime: 'nodejs22.x',
 	role: lambdaRole.arn,
 	handler: 'index.handler',
 	code: createLambdaCodeArchive('./lambda'),
+	layers: [sentryLayer.arn],
 	environment: {
 		variables: {
 			ALLOWED_EMAIL_ADDRESSES: allowedEmailAddresses,
@@ -108,14 +116,14 @@ const emailParserLambda = new aws.lambda.Function('kotetsu-email-parser', {
 	}
 });
 
-// 4. Subscribe Lambda to SNS Topic
+// 5. Subscribe Lambda to SNS Topic
 new aws.sns.TopicSubscription('email-parser-subscription', {
 	topic: sesEmailTopic.arn,
 	protocol: 'lambda',
 	endpoint: emailParserLambda.arn
 });
 
-// 5. Grant Lambda permission to be invoked by SNS
+// 6. Grant Lambda permission to be invoked by SNS
 new aws.lambda.Permission('allow-sns-invoke', {
 	action: 'lambda:InvokeFunction',
 	function: emailParserLambda.name,

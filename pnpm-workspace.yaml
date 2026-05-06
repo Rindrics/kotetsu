@@ -1,4 +1,5 @@
 packages:
   - 'infrastructure'
   - 'infrastructure/lambda'
+  - 'infrastructure/lambda-layer'
   - 'web'
