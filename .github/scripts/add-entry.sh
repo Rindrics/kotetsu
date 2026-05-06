@@ -21,10 +21,12 @@ CITATION_KEY=$(awk -v isbn="$ISBN" 'BEGIN{RS=""; FS="\n"} tolower($0) ~ tolower(
   }
 }' contents/references.bib 2>/dev/null || true)
 
-# If not found, generate citation key from ISBN
+# Track if entry was found in .bib
+FOUND_IN_BIB="true"
 if [ -z "$CITATION_KEY" ]; then
   echo "No matching .bib entry found, generating citation key from ISBN"
   CITATION_KEY="isbn-$ISBN"
+  FOUND_IN_BIB="false"
 fi
 
 # Check if entry already exists in custom_info.yaml
@@ -55,9 +57,16 @@ cat >> contents/custom_info.yaml << EOF
   readDate: '$READDATE'
 EOF
 
+# Build commit message based on entry type
+if [ "$FOUND_IN_BIB" = "true" ]; then
+  COMMIT_MSG="feat: add $CITATION_KEY from BibTeX (read $READDATE)"
+else
+  COMMIT_MSG="feat: add ISBN $ISBN (read $READDATE)"
+fi
+
 # Stage and commit
 git add contents/custom_info.yaml
-git commit -m "feat: add $CITATION_KEY (read $READDATE)"
+git commit -m "$COMMIT_MSG"
 
 # Push branch
 git push --force-with-lease origin "$BRANCH_NAME" || true
