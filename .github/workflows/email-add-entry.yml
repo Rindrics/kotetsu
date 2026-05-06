@@ -41,8 +41,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISBN: ${{ github.event.client_payload.isbn }}
           READDATE: ${{ github.event.client_payload.readDate }}
-          LAMBDA_URL: ${{ secrets.LAMBDA_ISBN_SEARCH_URL }}
-          JWT_TOKEN: ${{ secrets.LAMBDA_JWT_TOKEN }}
+          LAMBDA_API_URL: ${{ secrets.ISBN_SEARCH_API_URL }}
+          LAMBDA_JWT_TOKEN: ${{ secrets.LAMBDA_JWT_TOKEN }}
         run: |
           set +e
           OUTPUT=$(pnpm exec tsx .github/scripts/add-entry.ts 2>&1)

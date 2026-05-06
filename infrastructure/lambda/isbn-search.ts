@@ -1,37 +1,16 @@
 /**
  * Lambda function: ISBN検索とローマ字変換
  *
- * エンドポイント：
+ * エンドポイント（API Gateway経由）：
  * - POST /isbn-search { isbn }
- * - POST /title-search { title }
  * - POST /romanize { text }
  *
- * 認証：JWT Bearer token (LAMBDA_JWT_SECRET で署名)
+ * 認証：API Gateway JWT Token Authorizer (Lambda が JWT 検証)
  */
 
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import * as jwt from 'jsonwebtoken';
 import * as isbn from 'node-isbn';
 import Kuroshiro from 'kuroshiro';
-
-const JWT_SECRET = process.env.LAMBDA_JWT_SECRET || 'secret';
-
-/**
- * JWT トークンを検証
- */
-function verifyJWT(authHeader?: string): boolean {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false;
-  }
-
-  const token = authHeader.slice(7);
-  try {
-    jwt.verify(token, JWT_SECRET);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * エラーレスポンス
@@ -181,15 +160,11 @@ function hasJapanese(text: string): boolean {
 
 /**
  * メインハンドラ
+ * JWT認証はAPI Gatewayの Token Authorizer で実施済み
  */
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
-  // JWT 認証
-  if (!verifyJWT(event.headers.Authorization)) {
-    return errorResponse(401, 'Unauthorized');
-  }
-
   const body = event.body ? JSON.parse(event.body) : {};
   const path = event.path || event.requestContext?.path || '';
 

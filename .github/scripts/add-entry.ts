@@ -4,8 +4,8 @@
  * Environment variables:
  * - ISBN: Book ISBN
  * - READDATE: Read date (YYYY-MM-DD)
- * - LAMBDA_URL: Lambda function URL (isbn-search endpoint)
- * - JWT_TOKEN: JWT token for Lambda authentication
+ * - LAMBDA_API_URL: API Gateway endpoint (prod stage URL)
+ * - LAMBDA_JWT_TOKEN: JWT token for API Gateway authorization
  * - GH_TOKEN: GitHub token for git operations
  */
 
@@ -14,10 +14,10 @@ import { appendFileSync, readFileSync } from 'fs';
 
 const ISBN = process.env.ISBN;
 const READDATE = process.env.READDATE;
-const LAMBDA_URL = process.env.LAMBDA_URL;
-const JWT_TOKEN = process.env.JWT_TOKEN;
+const LAMBDA_API_URL = process.env.LAMBDA_API_URL;
+const LAMBDA_JWT_TOKEN = process.env.LAMBDA_JWT_TOKEN;
 
-if (!ISBN || !READDATE || !LAMBDA_URL || !JWT_TOKEN) {
+if (!ISBN || !READDATE || !LAMBDA_API_URL || !LAMBDA_JWT_TOKEN) {
   console.error('Missing required environment variables');
   process.exit(1);
 }
@@ -43,11 +43,11 @@ async function main() {
     // Step 1: Fetch book info from Lambda
     console.log(`Fetching book info for ISBN: ${ISBN}`);
 
-    const response = await fetch(`${LAMBDA_URL}/isbn-search`, {
+    const response = await fetch(`${LAMBDA_API_URL}isbn-search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${JWT_TOKEN}`,
+        'Authorization': `Bearer ${LAMBDA_JWT_TOKEN}`,
       },
       body: JSON.stringify({ isbn: ISBN }),
     });
@@ -74,11 +74,11 @@ async function main() {
     // Romanizer function
     const romanizer = hasJapanese(book.author.last) || hasJapanese(book.title)
       ? async (text: string) => {
-          const res = await fetch(`${LAMBDA_URL}/romanize`, {
+          const res = await fetch(`${LAMBDA_API_URL}romanize`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${JWT_TOKEN}`,
+              'Authorization': `Bearer ${LAMBDA_JWT_TOKEN}`,
             },
             body: JSON.stringify({ text }),
           });
