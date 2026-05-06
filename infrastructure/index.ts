@@ -32,6 +32,6 @@ export const emailLambdaFunctionArn = emailSetup.lambdaFunctionArn;
 export const emailReceiverAddress = emailSetup.sesReceiverAddress;
 
 // Export ISBN Lambda setup
-export const isbnLambdaFunctionUrl = isbnLambdaSetup.functionUrl;
-export const isbnLambdaFunctionArn = isbnLambdaSetup.functionArn;
-export const isbnLambdaFunctionName = isbnLambdaSetup.functionName;
+export const isbnLambdaApiUrl = isbnLambdaSetup.apiUrl;
+export const isbnLambdaFunctionArn = isbnLambdaSetup.isbnSearchFunctionArn;
+export const isbnLambdaFunctionName = isbnLambdaSetup.isbnSearchFunctionName;
