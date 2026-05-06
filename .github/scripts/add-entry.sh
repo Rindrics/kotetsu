@@ -43,15 +43,15 @@ EOF
 # Sanitize CITATION_KEY for use in branch name
 SAFE_KEY="${CITATION_KEY//[^A-Za-z0-9._-]/-}"
 
-# Create and checkout new branch
-git checkout -b "add-$SAFE_KEY"
+# Create and checkout new branch (use force if it exists locally)
+git checkout -b "add-$SAFE_KEY" 2>/dev/null || git checkout "add-$SAFE_KEY"
 
 # Stage and commit (use original CITATION_KEY for message)
 git add contents/custom_info.yaml
 git commit -m "feat: add $CITATION_KEY (read $READDATE)"
 
-# Push branch
-git push origin "add-$SAFE_KEY"
+# Push branch (force push to handle existing branches)
+git push --force-with-lease origin "add-$SAFE_KEY" || true
 
 # Determine BibTeX status
 BIB_STATUS="matching .bib entry found"
@@ -68,3 +68,4 @@ gh pr create \
 
 echo "citation_key=$CITATION_KEY"
 echo "safe_key=$SAFE_KEY"
+exit 0
