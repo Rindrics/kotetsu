@@ -4,7 +4,7 @@ YAML_FILE = $(CONTENTS_DIR)/custom_info.yaml
 DOCKER_RUN = docker run --rm -v $(PWD):/work -w /work
 BIBER_IMAGE = ghcr.io/rindrics/kotetsu/biber:latest
 
-.PHONY: format format-check lint check ci clean import build-biber validate-sync
+.PHONY: format format-check format-yaml lint check ci clean import build-biber validate-sync
 
 import:
 	@for f in $(CONTENTS_DIR)/*.bibtex; do \
@@ -15,9 +15,12 @@ import:
 		fi; \
 	done
 
-format:
+format: format-yaml
 	cat $(BIB_FILE) | $(DOCKER_RUN) -i node:20-alpine npx bibtex-tidy --curly --numeric --sort-fields --no-align --sort --trailing-commas > $(BIB_FILE).tmp
 	mv $(BIB_FILE).tmp $(BIB_FILE)
+
+format-yaml:
+	pnpm exec node scripts/sort-yaml.js $(YAML_FILE)
 
 format-check:
 	@cat $(BIB_FILE) | $(DOCKER_RUN) -i node:20-alpine npx bibtex-tidy --curly --numeric --sort-fields --no-align --sort --trailing-commas > $(BIB_FILE).tmp

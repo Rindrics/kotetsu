@@ -65,7 +65,7 @@ else
 fi
 
 # Sort YAML entries by key
-node "$(dirname "$0")/sort-yaml.js" "contents/custom_info.yaml"
+pnpm exec node scripts/sort-yaml.js contents/custom_info.yaml
 
 # Stage and commit
 git add contents/custom_info.yaml

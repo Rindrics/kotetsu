@@ -1,15 +1,5 @@
-suwa-2018-karadaga-umidasu:
-  readDate: '2026-01-15'
-  akirahayashi_com:
-    tags:
-      - ライブ
-      - 体感覚
-    review: 日々の練習において体感覚を鍛錬し、本番では身体に任せた「発露」によって最高のパフォーマンスを生み出す
-    memo:
-      - 内部用メモ（フロントエンドには表示されません）
-
 morita-2015-suugakusuru-karada:
-  readDate: '2026-02-08'
+  readDate: 2026-02-08
   akirahayashi_com:
     tags:
       - 数学
@@ -22,3 +12,12 @@ morita-2015-suugakusuru-karada:
       - p.33 進化電子工学の研究。離れ小島の論理ブロックが残ったが、実際には電磁的な漏出や磁束がタスクに利用されていた
       - p.21 道具の生態系
       - p.185 チューリングと岡の対比。チューリングは心を作る。岡は心になる
+suwa-2018-karadaga-umidasu:
+  readDate: 2026-01-15
+  akirahayashi_com:
+    tags:
+      - ライブ
+      - 体感覚
+    review: 日々の練習において体感覚を鍛錬し、本番では身体に任せた「発露」によって最高のパフォーマンスを生み出す
+    memo:
+      - 内部用メモ（フロントエンドには表示されません）
