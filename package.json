@@ -1,0 +1,16 @@
+{
+  "name": "kotetsu",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "web",
+    "infrastructure"
+  ],
+  "dependencies": {
+    "yaml": "^2.8.2"
+  },
+  "scripts": {
+    "format:yaml": "node scripts/sort-yaml.js contents/custom_info.yaml"
+  }
+}
