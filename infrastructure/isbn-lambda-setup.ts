@@ -135,7 +135,7 @@ const isbnSearchResource = new aws.apigateway.Resource('isbn-search-resource', {
 	pathPart: 'isbn-search'
 });
 
-new aws.apigateway.Method('isbn-search-post', {
+const isbnSearchMethod = new aws.apigateway.Method('isbn-search-post', {
 	restApi: isbnApi.id,
 	resourceId: isbnSearchResource.id,
 	httpMethod: 'POST',
@@ -143,14 +143,14 @@ new aws.apigateway.Method('isbn-search-post', {
 	authorizerId: tokenAuthorizer.id
 });
 
-new aws.apigateway.Integration('isbn-search-integration', {
+const isbnSearchIntegration = new aws.apigateway.Integration('isbn-search-integration', {
 	restApi: isbnApi.id,
 	resourceId: isbnSearchResource.id,
 	httpMethod: 'POST',
 	type: 'AWS_PROXY',
 	integrationHttpMethod: 'POST',
 	uri: pulumi.interpolate`arn:aws:apigateway:${currentRegion.then(r => r.name)}:lambda:path/2015-03-31/functions/${isbnSearchLambda.arn}/invocations`
-});
+}, { dependsOn: [isbnSearchMethod] });
 
 // 9. Create /romanize resource and method
 const romanizeResource = new aws.apigateway.Resource('romanize-resource', {
@@ -159,7 +159,7 @@ const romanizeResource = new aws.apigateway.Resource('romanize-resource', {
 	pathPart: 'romanize'
 });
 
-new aws.apigateway.Method('romanize-post', {
+const romanizeMethod = new aws.apigateway.Method('romanize-post', {
 	restApi: isbnApi.id,
 	resourceId: romanizeResource.id,
 	httpMethod: 'POST',
@@ -167,20 +167,20 @@ new aws.apigateway.Method('romanize-post', {
 	authorizerId: tokenAuthorizer.id
 });
 
-new aws.apigateway.Integration('romanize-integration', {
+const romanizeIntegration = new aws.apigateway.Integration('romanize-integration', {
 	restApi: isbnApi.id,
 	resourceId: romanizeResource.id,
 	httpMethod: 'POST',
 	type: 'AWS_PROXY',
 	integrationHttpMethod: 'POST',
 	uri: pulumi.interpolate`arn:aws:apigateway:${currentRegion.then(r => r.name)}:lambda:path/2015-03-31/functions/${isbnSearchLambda.arn}/invocations`
-});
+}, { dependsOn: [romanizeMethod] });
 
-// 10. Create deployment
+// 10. Create deployment (depends on all methods and integrations)
 const deployment = new aws.apigateway.Deployment('isbn-api-deployment', {
 	restApi: isbnApi.id,
 	stageName: ''
-}, { dependsOn: [isbnSearchResource, romanizeResource] });
+}, { dependsOn: [isbnSearchMethod, isbnSearchIntegration, romanizeMethod, romanizeIntegration] });
 
 // 11. Create prod stage
 const stage = new aws.apigateway.Stage('prod', {

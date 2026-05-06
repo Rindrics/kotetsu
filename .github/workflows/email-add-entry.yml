@@ -45,7 +45,7 @@ jobs:
           LAMBDA_JWT_TOKEN: ${{ secrets.LAMBDA_JWT_TOKEN }}
         run: |
           set +e
-          OUTPUT=$(pnpm exec tsx .github/scripts/add-entry.ts 2>&1)
+          OUTPUT=$(pnpm -w exec tsx .github/scripts/add-entry.ts 2>&1)
           EXIT_CODE=$?
           set -e
 
