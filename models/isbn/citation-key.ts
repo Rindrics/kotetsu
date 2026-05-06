@@ -48,7 +48,12 @@ async function normalizeFamilyName(
 }
 
 /**
- * タイトルから最初の2単語を取得
+ * 冠詞リスト（英語）
+ */
+const ARTICLES = new Set(['a', 'an', 'the']);
+
+/**
+ * タイトルから最初の2単語を取得（冠詞除外）
  * 日本語タイトルはローマ字変換後、スペース区切りで取得
  */
 async function extractTitleWords(
@@ -59,7 +64,10 @@ async function extractTitleWords(
 
   if (hasJapanese(normalized) && romanizer) {
     const roma = await romanizer(normalized);
-    const words = roma.split(/\s+/).map(normalizeForCitationKey).filter((w) => w.length > 0);
+    const words = roma
+      .split(/\s+/)
+      .map(normalizeForCitationKey)
+      .filter((w) => w.length > 0);
 
     if (words.length >= 2) {
       return [words[0], words[1]];
@@ -72,17 +80,30 @@ async function extractTitleWords(
     return ['unknown', 'unknown'];
   }
 
-  // ASCII タイトル: スペース区切り
-  const words = normalized
+  // ASCII タイトル: スペース区切り、冠詞を除外
+  const allWords = normalized
     .split(/\s+/)
     .map(normalizeForCitationKey)
     .filter((w) => w.length > 0);
 
-  if (words.length >= 2) {
-    return [words[0], words[1]];
+  // 冠詞を除いた単語を取得
+  const contentWords = allWords.filter((w) => !ARTICLES.has(w));
+
+  if (contentWords.length >= 2) {
+    return [contentWords[0], contentWords[1]];
   }
-  if (words.length === 1) {
-    const word = words[0];
+  if (contentWords.length === 1) {
+    const word = contentWords[0];
+    const mid = Math.ceil(word.length / 2);
+    return [word.slice(0, mid), word.slice(mid) || word.slice(0, mid)];
+  }
+
+  // 冠詞しかない場合は全単語を使う
+  if (allWords.length >= 2) {
+    return [allWords[0], allWords[1]];
+  }
+  if (allWords.length === 1) {
+    const word = allWords[0];
     const mid = Math.ceil(word.length / 2);
     return [word.slice(0, mid), word.slice(mid) || word.slice(0, mid)];
   }

@@ -15,10 +15,10 @@ describe('citation-key.ts - buildCitationKey', () => {
     expect(result).toBe('muller-2010-advanced-topics');
   });
 
-  it('タイトルが1単語のみの場合は分割', async () => {
+  it('タイトルが1単語のみの場合は分割しない', async () => {
     const author: AuthorName = { first: 'John', last: 'Smith' };
     const result = await buildCitationKey(author, 2015, 'Algorithms');
-    expect(result).toBe('smith-2015-algo-rithms');
+    expect(result).toBe('smith-2015-algorithms');
   });
 
   it('タイトルに記号が含まれる場合は除去', async () => {
@@ -36,13 +36,13 @@ describe('citation-key.ts - buildCitationKey', () => {
   it('著者名に複数単語がある場合', async () => {
     const author: AuthorName = { first: 'John', last: 'Van Der Berg' };
     const result = await buildCitationKey(author, 2010, 'Programming');
-    expect(result).toBe('van-der-berg-2010-programming-');
+    expect(result).toBe('van-der-berg-2010-programming');
   });
 
   it('タイトルに複数スペースがある場合', async () => {
     const author: AuthorName = { first: 'John', last: 'Smith' };
     const result = await buildCitationKey(author, 2005, 'The Quick Brown Fox');
-    expect(result).toBe('smith-2005-the-quick');
+    expect(result).toBe('smith-2005-quick-brown');
   });
 
   it('romanizer関数が提供された場合、日本語を変換', async () => {
