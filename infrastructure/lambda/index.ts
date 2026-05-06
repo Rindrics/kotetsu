@@ -9,7 +9,7 @@ import { SNSEvent, SNSHandler } from 'aws-lambda';
 import { handleEmailMessage, SESMessage } from './email-parser';
 
 const ALLOWED_ADDRESSES = process.env.ALLOWED_EMAIL_ADDRESSES || '';
-const GITHUB_TOKEN = process.env.GITHUB_DISPATCH_TOKEN || '';
+const GITHUB_TOKEN = process.env.REPOSITORY_DISPATCH_TOKEN || '';
 
 /**
  * Parse SNS message containing SES receipt notification
@@ -106,7 +106,7 @@ export const handler: SNSHandler = async (event: SNSEvent): Promise<void> => {
 		}
 
 		if (!GITHUB_TOKEN) {
-			console.error('GITHUB_DISPATCH_TOKEN environment variable not set');
+			console.error('REPOSITORY_DISPATCH_TOKEN environment variable not set');
 			results.push({
 				statusCode: 500,
 				body: 'Server configuration error'
