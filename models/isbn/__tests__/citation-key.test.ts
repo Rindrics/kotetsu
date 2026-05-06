@@ -27,21 +27,6 @@ describe('citation-key.ts - buildCitationKey', () => {
     expect(result).toBe('madonna-2000-ray-of');
   });
 
-  it('日本語著者名: 森田, 真生 → morita', async () => {
-    const result = await buildCitationKey('森田, 真生', 2015, 'Test Title');
-    expect(result).toMatch(/^morita-2015-/);
-  });
-
-  it('日本語タイトル: 数学する身体 → romaji', async () => {
-    const result = await buildCitationKey('Smith, John', 2015, '数学する身体');
-    expect(result).toMatch(/^smith-2015-[^-]+-[^-]+$/);
-  });
-
-  it('混合: 日本語著者 + 日本語タイトル', async () => {
-    const result = await buildCitationKey('森田, 真生', 2015, '数学する身体');
-    expect(result).toMatch(/^morita-2015-[^-]+-[^-]+$/);
-  });
-
   it('著者名に複数スペースがある場合', async () => {
     const result = await buildCitationKey('Van Der Berg, John', 2010, 'Programming');
     expect(result).toBe('berg-2010-programming-');
@@ -50,5 +35,18 @@ describe('citation-key.ts - buildCitationKey', () => {
   it('タイトルに複数スペースがある場合', async () => {
     const result = await buildCitationKey('Smith, John', 2005, 'The Quick Brown Fox');
     expect(result).toBe('smith-2005-the-quick');
+  });
+
+  it('romanizer関数が提供された場合、日本語を変換', async () => {
+    const mockRomanizer = async (text: string) => {
+      const map: { [key: string]: string } = {
+        '森田': 'morita',
+        '数学する身体': 'sugakusuru karada',
+      };
+      return map[text] || text;
+    };
+
+    const result = await buildCitationKey('森田, 真生', 2015, '数学する身体', mockRomanizer);
+    expect(result).toBe('morita-2015-sugakusuru-karada');
   });
 });
