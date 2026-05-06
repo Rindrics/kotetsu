@@ -110,59 +110,101 @@ function normalizeDateISO8601(raw: string): string | null {
  * SES passes the full email including headers and MIME structure
  */
 function extractPlainTextBody(fullMessage: string): string {
+	console.log('[MIME] Starting extraction, message length:', fullMessage.length);
+
 	// Normalize line endings to just \n for easier parsing
 	const normalized = fullMessage.replace(/\r\n/g, '\n');
+	console.log('[MIME] After normalization, length:', normalized.length);
 
 	// Split headers from body
 	const headerEndIndex = normalized.indexOf('\n\n');
 	if (headerEndIndex === -1) {
+		console.log('[MIME] No header/body separator found');
 		return fullMessage;
 	}
 
 	const headers = normalized.substring(0, headerEndIndex);
 	const bodyContent = normalized.substring(headerEndIndex + 2);
+	console.log('[MIME] Headers length:', headers.length, 'Body length:', bodyContent.length);
 
 	// Check if this is a multipart message
 	const contentTypeMatch = headers.match(/Content-Type:\s*([^;\n]+)/i);
 	if (!contentTypeMatch) {
+		console.log('[MIME] No Content-Type header found');
 		return fullMessage;
 	}
 
 	const contentType = contentTypeMatch[1].trim().toLowerCase();
+	console.log('[MIME] Content-Type:', contentType);
 
 	// If not multipart, return original body as-is
 	if (!contentType.startsWith('multipart/')) {
+		console.log('[MIME] Not multipart, returning body as-is');
 		return fullMessage;
 	}
 
-	// Extract boundary from Content-Type header
-	const boundaryMatch = headers.match(/boundary="?([^";\n]+)"?/i);
+	// Extract boundary from Content-Type header (remove quotes if present)
+	const boundaryMatch = headers.match(/boundary\s*=\s*"?([^";\n]+)"?/i);
 	if (!boundaryMatch) {
+		console.log('[MIME] No boundary found in Content-Type header');
 		return fullMessage;
 	}
 
 	const boundary = boundaryMatch[1].trim();
-	const escapedBoundary = boundary.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	console.log('[MIME] Boundary:', boundary);
 
-	// Find text/plain section - match content between text/plain header and next boundary
-	const plainTextMatch = bodyContent.match(
-		new RegExp(
-			`--${escapedBoundary}[^\n]*\n` +
-			`Content-Type: text/plain[^\n]*\n` +
-			`(?:Content-Transfer-Encoding[^\n]*\n)?` +
-			`(?:Content-Disposition[^\n]*\n)?` +
-			`\n` +
-			`([\\s\\S]*?)` +
-			`(?:\n--${escapedBoundary}|$)`,
-			'i'
-		)
-	);
+	// Split body by boundary markers
+	const parts = bodyContent.split(`--${boundary}`);
+	console.log('[MIME] Found', parts.length, 'parts');
 
-	if (plainTextMatch && plainTextMatch[1]) {
-		return plainTextMatch[1].trim();
+	// Find the part with text/plain content
+	for (let partIdx = 0; partIdx < parts.length; partIdx++) {
+		const part = parts[partIdx];
+		console.log(`[MIME] Processing part ${partIdx}, length: ${part.length}`);
+
+		const lines = part.split('\n');
+
+		// Look for Content-Type: text/plain header in this part
+		let isPlainText = false;
+		let contentStartIndex = -1;
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+
+			if (line.match(/Content-Type:\s*text\/plain/i)) {
+				console.log(`[MIME] Found text/plain at line ${i}`);
+				isPlainText = true;
+			}
+
+			// Content starts after the blank line following headers
+			if (isPlainText && line.trim() === '') {
+				contentStartIndex = i + 1;
+				console.log(`[MIME] Found blank line at ${i}, content starts at ${contentStartIndex}`);
+				break;
+			}
+		}
+
+		if (isPlainText && contentStartIndex > 0) {
+			// Extract content lines until we hit another boundary or end
+			const contentLines = lines.slice(contentStartIndex);
+			const content = contentLines.join('\n').trim();
+			console.log('[MIME] Extracted content:', content.substring(0, 100));
+
+			// Remove any trailing boundary marker
+			const boundaryIndex = content.indexOf(`--${boundary}`);
+			if (boundaryIndex !== -1) {
+				const result = content.substring(0, boundaryIndex).trim();
+				console.log('[MIME] Removed trailing boundary, final result:', result.substring(0, 100));
+				return result;
+			}
+
+			console.log('[MIME] No trailing boundary, returning content as-is');
+			return content;
+		}
 	}
 
 	// Fallback: return original message as-is
+	console.log('[MIME] No text/plain part found, returning original message');
 	return fullMessage;
 }
 
