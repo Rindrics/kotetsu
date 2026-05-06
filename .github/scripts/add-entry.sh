@@ -21,16 +21,33 @@ CITATION_KEY=$(awk -v isbn="$ISBN" 'BEGIN{RS=""; FS="\n"} tolower($0) ~ tolower(
   }
 }' contents/references.bib 2>/dev/null || true)
 
-# If not found, generate citation key from ISBN
+# Track if entry was found in .bib
+FOUND_IN_BIB="true"
 if [ -z "$CITATION_KEY" ]; then
   echo "No matching .bib entry found, generating citation key from ISBN"
   CITATION_KEY="isbn-$ISBN"
+  FOUND_IN_BIB="false"
 fi
 
 # Check if entry already exists in custom_info.yaml
 if awk -v k="$CITATION_KEY" -F: '$1==k{exit 0} END{exit 1}' contents/custom_info.yaml 2>/dev/null; then
   echo "duplicate=true"
   exit 0
+fi
+
+# Fixed branch name
+BRANCH_NAME="add-entry"
+
+# Check if PR already exists
+PR_NUMBER=$(gh pr list --head "$BRANCH_NAME" --base "main" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+if [ -n "$PR_NUMBER" ]; then
+  # PR exists, checkout existing branch and add commit
+  git fetch origin "$BRANCH_NAME" 2>/dev/null || true
+  git checkout "$BRANCH_NAME" || git checkout -b "$BRANCH_NAME" --track "origin/$BRANCH_NAME"
+else
+  # PR doesn't exist, create new branch
+  git checkout -b "$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME"
 fi
 
 # Append new entry to custom_info.yaml
@@ -40,18 +57,22 @@ cat >> contents/custom_info.yaml << EOF
   readDate: '$READDATE'
 EOF
 
-# Sanitize CITATION_KEY for use in branch name
-SAFE_KEY="${CITATION_KEY//[^A-Za-z0-9._-]/-}"
+# Build commit message based on entry type
+if [ "$FOUND_IN_BIB" = "true" ]; then
+  COMMIT_MSG="feat: add $CITATION_KEY from BibTeX (read $READDATE)"
+else
+  COMMIT_MSG="feat: add ISBN $ISBN (read $READDATE)"
+fi
 
-# Create and checkout new branch
-git checkout -b "add-$SAFE_KEY"
+# Sort YAML entries by key
+node "$(dirname "$0")/sort-yaml.js" "contents/custom_info.yaml"
 
-# Stage and commit (use original CITATION_KEY for message)
+# Stage and commit
 git add contents/custom_info.yaml
-git commit -m "feat: add $CITATION_KEY (read $READDATE)"
+git commit -m "$COMMIT_MSG"
 
 # Push branch
-git push origin "add-$SAFE_KEY"
+git push --force-with-lease origin "$BRANCH_NAME" || true
 
 # Determine BibTeX status
 BIB_STATUS="matching .bib entry found"
@@ -59,12 +80,26 @@ if [[ "$CITATION_KEY" == isbn-* ]]; then
   BIB_STATUS="⚠️ No matching .bib entry - citation key auto-generated from ISBN. Please add to references.bib manually."
 fi
 
-# Create Pull Request
-gh pr create \
-  --title "Add $CITATION_KEY" \
-  --body "$(printf 'Added from email\n\n**ISBN**: %s\n**Read date**: %s\n**Status**: %s\n\nPlease review, add to references.bib if needed, and merge if correct.' "$ISBN" "$READDATE" "$BIB_STATUS")" \
-  --head "add-$SAFE_KEY" \
-  --base "main"
+# Create or update PR
+if [ -n "$PR_NUMBER" ]; then
+  # PR already exists, just update it
+  echo "Updated PR #$PR_NUMBER with new entry: $CITATION_KEY"
+else
+  # Create new PR with fixed title
+  gh pr create \
+    --title "Add entry" \
+    --body "Added from email
+
+**ISBN**: \`$ISBN\`
+**Read date**: \`$READDATE\`
+**Citation key**: \`$CITATION_KEY\`
+**Status**: $BIB_STATUS
+
+Please review, add to references.bib if needed, and merge if correct." \
+    --head "$BRANCH_NAME" \
+    --base "main"
+  echo "Created new PR with entry: $CITATION_KEY"
+fi
 
 echo "citation_key=$CITATION_KEY"
-echo "safe_key=$SAFE_KEY"
+exit 0
