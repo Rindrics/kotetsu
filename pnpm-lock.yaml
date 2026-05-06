@@ -38,6 +38,9 @@ importers:
       '@sentry/core':
         specifier: ^8.5.0
         version: 8.55.2
+      '@sentry/node':
+        specifier: ^8.5.0
+        version: 8.55.2
     devDependencies:
       '@types/aws-lambda':
         specifier: ^8.10.142
