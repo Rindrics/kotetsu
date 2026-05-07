@@ -32,7 +32,7 @@
 		"typescript": "^5.9.3",
 		"vite": "^7.2.6",
 		"vitest": "^3.2.0",
-		"wrangler": "^3.71.1"
+		"wrangler": "^4.0.0"
 	},
 	"dependencies": {
 		"yaml": "^2.8.2"
