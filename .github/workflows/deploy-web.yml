@@ -49,6 +49,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "3.x"
+          workingDirectory: web
           secrets: LAMBDA_JWT_TOKEN
         env:
           LAMBDA_JWT_TOKEN: ${{ secrets.LAMBDA_JWT_TOKEN }}
