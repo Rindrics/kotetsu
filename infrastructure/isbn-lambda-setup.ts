@@ -135,10 +135,10 @@ const isbnSearchResource = new aws.apigateway.Resource('isbn-search-resource', {
 	pathPart: 'isbn-search'
 });
 
-const isbnSearchMethod = new aws.apigateway.Method('isbn-search-post', {
+const isbnSearchMethod = new aws.apigateway.Method('isbn-search-get', {
 	restApi: isbnApi.id,
 	resourceId: isbnSearchResource.id,
-	httpMethod: 'POST',
+	httpMethod: 'GET',
 	authorization: 'CUSTOM',
 	authorizerId: tokenAuthorizer.id
 });
@@ -146,7 +146,7 @@ const isbnSearchMethod = new aws.apigateway.Method('isbn-search-post', {
 const isbnSearchIntegration = new aws.apigateway.Integration('isbn-search-integration', {
 	restApi: isbnApi.id,
 	resourceId: isbnSearchResource.id,
-	httpMethod: 'POST',
+	httpMethod: 'GET',
 	type: 'AWS_PROXY',
 	integrationHttpMethod: 'POST',
 	uri: pulumi.interpolate`arn:aws:apigateway:${currentRegion.then(r => r.name)}:lambda:path/2015-03-31/functions/${isbnSearchLambda.arn}/invocations`
@@ -159,10 +159,10 @@ const romanizeResource = new aws.apigateway.Resource('romanize-resource', {
 	pathPart: 'romanize'
 });
 
-const romanizeMethod = new aws.apigateway.Method('romanize-post', {
+const romanizeMethod = new aws.apigateway.Method('romanize-get', {
 	restApi: isbnApi.id,
 	resourceId: romanizeResource.id,
-	httpMethod: 'POST',
+	httpMethod: 'GET',
 	authorization: 'CUSTOM',
 	authorizerId: tokenAuthorizer.id
 });
@@ -170,7 +170,7 @@ const romanizeMethod = new aws.apigateway.Method('romanize-post', {
 const romanizeIntegration = new aws.apigateway.Integration('romanize-integration', {
 	restApi: isbnApi.id,
 	resourceId: romanizeResource.id,
-	httpMethod: 'POST',
+	httpMethod: 'GET',
 	type: 'AWS_PROXY',
 	integrationHttpMethod: 'POST',
 	uri: pulumi.interpolate`arn:aws:apigateway:${currentRegion.then(r => r.name)}:lambda:path/2015-03-31/functions/${isbnSearchLambda.arn}/invocations`

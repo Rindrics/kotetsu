@@ -166,11 +166,12 @@ export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
   const body = event.body ? JSON.parse(event.body) : {};
+  const queryParams = event.queryStringParameters || {};
   const path = event.path || event.requestContext?.path || '';
 
   // ルーティング
   if (path.includes('/isbn-search')) {
-    const isbnStr = body.isbn as string | undefined;
+    const isbnStr = (queryParams.isbn || body.isbn) as string | undefined;
     if (!isbnStr) {
       return errorResponse(400, 'isbn パラメータが必要です');
     }
@@ -178,7 +179,7 @@ export const handler: APIGatewayProxyHandler = async (
   }
 
   if (path.includes('/romanize')) {
-    const text = body.text as string | undefined;
+    const text = (queryParams.text || body.text) as string | undefined;
     if (!text) {
       return errorResponse(400, 'text パラメータが必要です');
     }
