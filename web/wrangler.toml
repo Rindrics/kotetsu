@@ -1,7 +1,3 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "kotetsu"
 pages_build_output_dir = ".svelte-kit/cloudflare"
-
-[build]
-command = "pnpm build"
-cwd = "."
