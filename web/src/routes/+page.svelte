@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { formatAuthor } from '$lib/formatters/author';
+	import HighlightedReview from '$lib/components/HighlightedReview.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -11,7 +12,7 @@
 	let isbnSearchError = $state('');
 	let isbnSearchLoading = $state(false);
 
-	// Collect all unique tags
+	// Collect all unique tags (manual + extracted)
 	const allTags = $derived(() => {
 		const tags = new Set<string>();
 		for (const item of data.items) {
@@ -20,9 +21,26 @@
 					tags.add(tag);
 				}
 			}
+			if (item.customInfo?.extractedTags) {
+				for (const tag of item.customInfo.extractedTags) {
+					tags.add(tag);
+				}
+			}
 		}
 		return Array.from(tags).sort();
 	});
+
+	// Get all tags for a single item (manual + extracted, deduplicated)
+	const getItemTags = (item: (typeof data.items)[0]): string[] => {
+		const tags = new Set<string>();
+		if (item.customInfo?.tags) {
+			item.customInfo.tags.forEach(tag => tags.add(tag));
+		}
+		if (item.customInfo?.extractedTags) {
+			item.customInfo.extractedTags.forEach(tag => tags.add(tag));
+		}
+		return Array.from(tags).sort();
+	};
 
 	// Check if in tag search mode (starts with #)
 	const isTagMode = $derived(() => searchQuery.startsWith('#'));
@@ -87,9 +105,11 @@
 		if (isTagMode()) {
 			const query = tagQuery();
 			if (!query) return data.items;
-			return data.items.filter((item) =>
-				item.customInfo?.tags?.some((tag) => tag.toLowerCase().includes(query))
-			);
+			return data.items.filter((item) => {
+				const hasTag = item.customInfo?.tags?.some((tag) => tag.toLowerCase().includes(query));
+				const hasExtractedTag = item.customInfo?.extractedTags?.some((tag) => tag.toLowerCase().includes(query));
+				return hasTag || hasExtractedTag;
+			});
 		}
 
 		// Normal search mode
@@ -406,12 +426,14 @@
 						<!-- Custom Info -->
 						{#if item.customInfo}
 							<div class="border-t border-slate-700/50 pt-6">
-								<!-- Tags -->
-								{#if item.customInfo.tags && item.customInfo.tags.length > 0}
+								<!-- All Tags (manual + extracted, deduplicated) -->
+								{#if getItemTags(item).length > 0}
+									{@const itemTags = getItemTags(item)}
 									<div class="mb-4 flex flex-wrap gap-2">
-										{#each item.customInfo.tags as tag}
+										{#each itemTags as tag}
 											<span
-												class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-400"
+												class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-400 cursor-pointer hover:bg-emerald-500/20 transition-colors"
+												onclick={() => selectTag(tag)}
 											>
 												#{tag}
 											</span>
@@ -424,10 +446,14 @@
 									<div class="review text-slate-300 leading-relaxed">
 										{#if Array.isArray(item.customInfo.review)}
 											{#each item.customInfo.review as reviewItem}
-												<p class="mb-2">{reviewItem}</p>
+												<p class="mb-2">
+													<HighlightedReview text={reviewItem} onTagClick={selectTag} />
+												</p>
 											{/each}
 										{:else}
-											<p>{item.customInfo.review}</p>
+											<p>
+												<HighlightedReview text={item.customInfo.review} onTagClick={selectTag} />
+											</p>
 										{/if}
 									</div>
 								{/if}

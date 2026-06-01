@@ -21,9 +21,9 @@ export function extractTags(text: string): ExtractedTags {
 	// Replace \# with placeholder to protect from tag extraction
 	processedText = processedText.replace(/\\#/g, placeholder);
 
-	// Match tags: # preceded by space or start, followed by word chars
-	// Use lookahead for space/end to avoid consuming it
-	const tagRegex = /(^|\s)#([\w_\p{L}\p{N}]+)(?=\s|$)/gu;
+	// Match tags: # preceded by space/start/non-word-char, followed by word chars
+	// Use lookahead to avoid consuming the following character
+	const tagRegex = /(^|[\s\W])#([\w_\p{L}\p{N}]+)(?=\s|$|[^\w_\p{L}\p{N}])/gu;
 
 	processedText = processedText.replace(tagRegex, (match, prefix, tag) => {
 		tags.push(tag);
