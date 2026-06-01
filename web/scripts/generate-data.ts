@@ -67,7 +67,8 @@ function parseFields(content: string): Record<string, string> {
 function toFrontendInfo(info: CustomInfoFull): CustomInfoFrontend | undefined {
 	const frontendInfo: CustomInfoFrontend = {
 		tags: info.tags,
-		review: info.review
+		review: info.review,
+		extractedTags: info.extractedTags
 	};
 
 	// Only include customInfo if at least one field is present

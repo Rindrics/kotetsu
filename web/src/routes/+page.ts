@@ -13,7 +13,8 @@ export function load() {
 			const customInfo: CustomInfoFrontend | undefined = siteInfo
 				? {
 						tags: siteInfo.tags,
-						review: siteInfo.review
+						review: siteInfo.review,
+						extractedTags: siteInfo.extractedTags
 					}
 				: undefined;
 

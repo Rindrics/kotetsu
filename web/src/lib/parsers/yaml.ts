@@ -1,5 +1,6 @@
 import { parse } from 'yaml';
 import type { CustomInfoFull, ParsedEntryInfo } from '../types';
+import { extractTags, unescapeText } from '../extractTags';
 
 /**
  * Check if value is a plain object
@@ -66,6 +67,52 @@ function validateCustomInfo(value: unknown): value is CustomInfoFull {
 }
 
 /**
+ * Extract and deduplicate tags from text fields
+ */
+function extractAndMergeTags(
+	review: string | string[] | undefined,
+	memo: string[] | undefined
+): string[] {
+	const allTags = new Set<string>();
+
+	// Extract tags from review
+	if (typeof review === 'string') {
+		const { tags } = extractTags(review);
+		tags.forEach((t) => allTags.add(t));
+	} else if (Array.isArray(review)) {
+		review.forEach((line) => {
+			const { tags } = extractTags(line);
+			tags.forEach((t) => allTags.add(t));
+		});
+	}
+
+	// Extract tags from memo
+	if (Array.isArray(memo)) {
+		memo.forEach((line) => {
+			const { tags } = extractTags(line);
+			tags.forEach((t) => allTags.add(t));
+		});
+	}
+
+	return Array.from(allTags);
+}
+
+/**
+ * Unescape hashes in review and memo fields
+ */
+function unescapeCustomInfo(info: CustomInfoFull): CustomInfoFull {
+	return {
+		...info,
+		review: Array.isArray(info.review)
+			? info.review.map((r) => unescapeText(r))
+			: info.review
+				? unescapeText(info.review)
+				: undefined,
+		memo: info.memo?.map((m) => unescapeText(m))
+	};
+}
+
+/**
  * Parse YAML content and return a map of entry ID to ParsedEntryInfo
  * Extracts readDate at entry level and per-site CustomInfoFull
  * Returns empty Map on invalid inputs or parse errors
@@ -99,7 +146,13 @@ export function parseCustomInfo(content: string): Map<string, ParsedEntryInfo> {
 		for (const [key, value] of Object.entries(entryValue)) {
 			if (key === 'readDate') continue;
 			if (validateCustomInfo(value)) {
-				sites[key] = value;
+				// Extract tags and unescape hashes
+				const info = unescapeCustomInfo(value);
+				const extractedTags = extractAndMergeTags(info.review, info.memo);
+				sites[key] = {
+					...info,
+					extractedTags: extractedTags.length > 0 ? extractedTags : undefined
+				};
 			}
 		}
 
