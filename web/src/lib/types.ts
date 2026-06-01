@@ -22,6 +22,7 @@ export interface CustomInfoFull {
 	tags?: string[];
 	review?: string | string[];
 	memo?: string[];
+	extractedTags?: string[];
 }
 
 /**
@@ -31,6 +32,7 @@ export interface CustomInfoFull {
 export interface CustomInfoFrontend {
 	tags?: string[];
 	review?: string | string[];
+	extractedTags?: string[];
 }
 
 /**
