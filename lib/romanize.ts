@@ -42,12 +42,15 @@ export async function toRomaji(text: string, lambdaUrl: string, jwtToken: string
 /**
  * Citation key 生成用の正規化
  * - 小文字化
+ * - Unicode 文字を基本文字に正規化（ü→u など）
  * - 記号・句読点を除去
  * - スペースをハイフンに変換
  */
 export function normalizeForCitationKey(s: string): string {
   return s
     .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/[-_]/g, ' ')
     .replace(/[^\w\s]/g, '')
     .trim()

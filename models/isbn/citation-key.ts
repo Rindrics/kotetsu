@@ -28,7 +28,11 @@ export async function buildCitationKey(
 ): Promise<string> {
   const family = await normalizeFamilyName(author.last, romanizer);
   const words = await extractTitleWords(title, romanizer);
-  return `${family}-${year}-${words[0]}-${words[1]}`;
+
+  if (words[1]) {
+    return `${family}-${year}-${words[0]}-${words[1]}`;
+  }
+  return `${family}-${year}-${words[0]}`;
 }
 
 /**
@@ -73,11 +77,9 @@ async function extractTitleWords(
       return [words[0], words[1]];
     }
     if (words.length === 1) {
-      const word = words[0];
-      const mid = Math.ceil(word.length / 2);
-      return [word.slice(0, mid), word.slice(mid) || word.slice(0, mid)];
+      return [words[0], ''];
     }
-    return ['unknown', 'unknown'];
+    return ['unknown', ''];
   }
 
   // ASCII タイトル: スペース区切り、冠詞を除外
@@ -93,9 +95,7 @@ async function extractTitleWords(
     return [contentWords[0], contentWords[1]];
   }
   if (contentWords.length === 1) {
-    const word = contentWords[0];
-    const mid = Math.ceil(word.length / 2);
-    return [word.slice(0, mid), word.slice(mid) || word.slice(0, mid)];
+    return [contentWords[0], ''];
   }
 
   // 冠詞しかない場合は全単語を使う
@@ -103,9 +103,7 @@ async function extractTitleWords(
     return [allWords[0], allWords[1]];
   }
   if (allWords.length === 1) {
-    const word = allWords[0];
-    const mid = Math.ceil(word.length / 2);
-    return [word.slice(0, mid), word.slice(mid) || word.slice(0, mid)];
+    return [allWords[0], ''];
   }
-  return ['unknown', 'unknown'];
+  return ['unknown', ''];
 }

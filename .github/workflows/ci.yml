@@ -22,8 +22,10 @@ jobs:
             contents:
               - 'contents/**'
               - 'Makefile'
+              - '.github/workflows/ci.yml'
             web:
               - 'web/**'
+              - '.github/workflows/ci.yml'
 
   check-contents:
     needs: changes
@@ -65,6 +67,9 @@ jobs:
 
       - name: Type check
         run: pnpm check
+
+      - name: Test
+        run: pnpm test
 
       - name: Build
         run: pnpm build

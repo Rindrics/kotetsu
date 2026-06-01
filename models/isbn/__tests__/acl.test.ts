@@ -44,7 +44,7 @@ describe('acl.ts - toBookInfo', () => {
     };
 
     const result = toBookInfo(raw, '9780000000000');
-    expect(result.author).toBe('Smith, John');
+    expect(result.author).toEqual({ first: 'John', last: 'Smith' });
   });
 
   it('publishedDate形式: "2004-01-15" → year: 2004', () => {

@@ -80,6 +80,7 @@ function extractYear(publishedDate?: string): number | null {
 /**
  * industryIdentifiers から ISBN-13 と ISBN-10 を抽出
  * ISBN-13 を優先、ない場合は ISBN-10
+ * ISBN-13 がない場合は isbn10 フィールドを未定義にする
  */
 function extractIsbns(
   identifiers: IsbnApiResponse['industryIdentifiers'] | undefined,
@@ -99,12 +100,11 @@ function extractIsbns(
 
   if (isbn13) {
     result.isbn13 = isbn13.identifier;
+    if (isbn10) {
+      result.isbn10 = isbn10.identifier;
+    }
   } else if (isbn10) {
     result.isbn13 = isbn10.identifier;
-  }
-
-  if (isbn10) {
-    result.isbn10 = isbn10.identifier;
   }
 
   return result;
