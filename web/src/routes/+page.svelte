@@ -3,14 +3,27 @@
 	import { formatAuthor } from '$lib/formatters/author';
 	import HighlightedReview from '$lib/components/HighlightedReview.svelte';
 
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
+
 	let { data }: { data: PageData } = $props();
 
-	let searchQuery = $state('');
+	let searchQuery = $state(data.initialSearch || '');
 	let showTagSuggestions = $state(false);
 	let selectedSuggestionIndex = $state(-1);
 	let isbnSearchResult = $state<any>(null);
 	let isbnSearchError = $state('');
 	let isbnSearchLoading = $state(false);
+
+	// Sync searchQuery with URL query parameter
+	$effect(() => {
+		const currentQ = $page.url.searchParams.get('q');
+		if (searchQuery && searchQuery !== currentQ) {
+			goto(`?q=${encodeURIComponent(searchQuery)}`, { replaceState: true, noScroll: true });
+		} else if (!searchQuery && currentQ) {
+			goto('?', { replaceState: true, noScroll: true });
+		}
+	});
 
 	// Collect all unique tags (manual + extracted)
 	const allTags = $derived(() => {

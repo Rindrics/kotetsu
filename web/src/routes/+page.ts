@@ -1,10 +1,10 @@
-import type { BibEntry, CustomInfoFrontend } from '$lib/types';
+import type { BibEntry, CustomInfoFrontend, PageData } from '$lib/types';
 import { bibliographyData } from '$lib/data/bibliography';
 import { DEFAULT_SITE_ID } from '$lib/config/constants';
 
 export const prerender = true;
 
-export function load() {
+export function load({ url }) {
 	// Transform bibliography data to frontend format: extract site-specific customInfo
 	// Explicitly exclude memo field for security
 	const items: Array<BibEntry & { readDate?: string; customInfo?: CustomInfoFrontend }> =
@@ -24,6 +24,8 @@ export function load() {
 			};
 		});
 
-	return { items };
+	const initialSearch = url.searchParams.get('q') || '';
+
+	return { items, initialSearch };
 }
 
