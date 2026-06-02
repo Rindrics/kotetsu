@@ -14,16 +14,15 @@
 	let isbnSearchResult = $state<any>(null);
 	let isbnSearchError = $state('');
 	let isbnSearchLoading = $state(false);
+	let searchInput: HTMLInputElement;
 
-	// Sync searchQuery with URL query parameter
-	$effect(() => {
-		const currentQ = $page.url.searchParams.get('q');
-		if (searchQuery && searchQuery !== currentQ) {
+	function shareSearch() {
+		if (searchQuery) {
 			goto(`?q=${encodeURIComponent(searchQuery)}`, { replaceState: true, noScroll: true });
-		} else if (!searchQuery && currentQ) {
+		} else {
 			goto('?', { replaceState: true, noScroll: true });
 		}
-	});
+	}
 
 	// Collect all unique tags (manual + extracted)
 	const allTags = $derived(() => {
@@ -225,6 +224,7 @@
 				</svg>
 				<input
 					type="text"
+					bind:this={searchInput}
 					bind:value={searchQuery}
 					oninput={handleInput}
 					onkeydown={handleKeydown}
@@ -234,20 +234,37 @@
 					class="w-full rounded-xl border border-slate-700 bg-slate-800/80 py-3 pl-12 pr-4 text-slate-200 placeholder-slate-500 outline-none transition-all focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
 				/>
 				{#if searchQuery}
-					<button
-						type="button"
-						onclick={() => (searchQuery = '')}
-						class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-slate-300"
-					>
-						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="1.5"
-								d="M6 18L18 6M6 6l12 12"
-							/>
-						</svg>
-					</button>
+					<div class="absolute right-4 top-1/2 flex gap-2 -translate-y-1/2">
+						<button
+							type="button"
+							onclick={shareSearch}
+							class="text-slate-500 transition-colors hover:text-amber-400"
+							title="検索結果をシェア"
+						>
+							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="1.5"
+									d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
+								/>
+							</svg>
+						</button>
+						<button
+							type="button"
+							onclick={() => (searchQuery = '')}
+							class="text-slate-500 transition-colors hover:text-slate-300"
+						>
+							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="1.5"
+									d="M6 18L18 6M6 6l12 12"
+								/>
+							</svg>
+						</button>
+					</div>
 				{/if}
 
 				<!-- Tag suggestions dropdown -->
